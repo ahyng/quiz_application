@@ -3,12 +3,12 @@ const mongoose = require('mongoose');
 const bcrypt = require("bcrypt");
 require("dotenv").config();
 
-
 const app = express();
 const port = 8080;
 const salt = 10;
 
 const User = require('./models/user');
+const Quiz = require('./models/quiz');
 app.use(express.json());
 
 const dbConnect = async () => {
@@ -28,7 +28,6 @@ app.listen(port, () => {
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
-    dbConnect();
 })
 
 
@@ -70,5 +69,38 @@ app.post('/sign-in', async (req, res) => {
         console.log('user not found');
         res.json({signIn : 'user not found'});
     }
+})
+
+
+// 퀴즈 저장
+app.post('/write', async (req, res) => {
+    console.log(req.body);
+    const items = [];
+    for(let i=0; i<req.body.items.length; i++) {
+        const item = {key : req.body.items[i].key, question : req.body.items[i].question, answer : req.body.items[i].answer};
+        items.push(item);
+    }
+
+    let randomCode = Math.random().toString(36).slice(2);
+    let codeCheck = await Quiz.findOne({code : randomCode});
+
+    while (codeCheck) {
+        randomCode = Math.random().toString(36).slice(2);
+        codeCheck = await Quiz.findOne({code : randomCode});
+    }
+
+    Quiz.create({userId : req.body.userId, quiz : items, code : randomCode});
+    res.send('succeed');
+})
+
+
+// 코드 입력 받기
+app.post('/code', async (req, res) => {
+    console.log(req.body);
+    const inputCode = req.body.code;
+    const findQuiz = await Quiz.findOne({code : inputCode});
+
+    console.log(findQuiz);
+    res.send(findQuiz);
 })
 

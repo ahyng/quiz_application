@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const bcrypt = require("bcrypt");
 const cors = require('cors');
 
-
 require("dotenv").config();
 
 const app = express();
@@ -38,13 +37,15 @@ app.get('/', (req, res) => {
 // 회원가입
 app.post('/sign-up', async (req, res) => {
     console.log(await req.body);
-    const hashedPwd = await bcrypt.hash(req.body.password, salt);
-
+    const pwdCheck = req.body.password.length >= 8;
     const emailCheck = await User.findOne({email : req.body.email});
 
     if (emailCheck) {
         res.status(409).json({success : false, message : "email exists"});
+    } else if (!pwdCheck) {
+        res.status(400).json({success : false, message : "pwd length"});
     } else {
+        const hashedPwd = await bcrypt.hash(req.body.password, salt);
         User.create({email : req.body.email, password : hashedPwd});
         res.status(200).json({success : true, message : "succeed"});
     }
@@ -54,7 +55,6 @@ app.post('/sign-up', async (req, res) => {
 app.post('/sign-in', async (req, res) => {
     console.log(req.body);
     const loginPwd = await req.body.password;
-    
     const user = await User.findOne({email : req.body.email});
 
     if (user) {
@@ -64,11 +64,11 @@ app.post('/sign-in', async (req, res) => {
             res.status(200).json({success : true});
         } else {
             console.log('failed');
-            res.status(401).json({success : false});
+            res.status(401).json({success : false, message : "invalid pwd"});
         }
     } else {
         console.log('user not found');
-        res.status(401).json({success : false});
+        res.status(401).json({success : false, message : "user not found"});
     }
 })
 

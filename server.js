@@ -1,6 +1,9 @@
 const express = require('express')
 const mongoose = require('mongoose');
 const bcrypt = require("bcrypt");
+const cors = require('cors');
+
+
 require("dotenv").config();
 
 const app = express();
@@ -10,6 +13,7 @@ const salt = 10;
 const User = require('./models/user');
 const Quiz = require('./models/quiz');
 app.use(express.json());
+app.use(cors());
 
 const dbConnect = async () => {
     try {
@@ -36,17 +40,14 @@ app.post('/sign-up', async (req, res) => {
     console.log(await req.body);
     const hashedPwd = await bcrypt.hash(req.body.password, salt);
 
-    const idCheck = await User.findOne({userId : req.body.userId});
+    const emailCheck = await User.findOne({email : req.body.email});
 
-    // id 중복확인
-    if (idCheck) {
-        console.log('idCheck failed');
-        res.json({idCheck : 'failed'});
+    if (emailCheck) {
+        res.status(409).json({success : false, message : "email exists"});
     } else {
-        User.create({userId : req.body.userId, password : hashedPwd});
-        res.json({signUp : 'succeed'});
+        User.create({email : req.body.email, password : hashedPwd});
+        res.status(200).json({success : true, message : "succeed"});
     }
-    
 })
 
 // 로그인
@@ -54,20 +55,20 @@ app.post('/sign-in', async (req, res) => {
     console.log(req.body);
     const loginPwd = await req.body.password;
     
-    const user = await User.findOne({userId : req.body.userId});
+    const user = await User.findOne({email : req.body.email});
 
     if (user) {
         const checkPwd = await bcrypt.compare(loginPwd, user.password);
         if (checkPwd) {
             console.log('succeed');
-            res.json({signIn : 'succeed'});
+            res.status(200).json({success : true});
         } else {
             console.log('failed');
-            res.json({signIn : 'failed'});
+            res.status(401).json({success : false});
         }
     } else {
         console.log('user not found');
-        res.json({signIn : 'user not found'});
+        res.status(401).json({success : false});
     }
 })
 
@@ -89,10 +90,9 @@ app.post('/write', async (req, res) => {
         codeCheck = await Quiz.findOne({code : randomCode});
     }
 
-    Quiz.create({userId : req.body.userId, quiz : items, code : randomCode});
+    Quiz.create({email : req.body.email, quiz : items, code : randomCode});
     res.send('succeed');
 })
-
 
 // 코드 입력 받기
 app.post('/code', async (req, res) => {
@@ -103,4 +103,3 @@ app.post('/code', async (req, res) => {
     console.log(findQuiz);
     res.send(findQuiz);
 })
-

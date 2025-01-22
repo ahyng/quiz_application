@@ -72,25 +72,54 @@ app.post('/sign-in', async (req, res) => {
     }
 })
 
+app.get('/main', (req, res) => {
+    const user_email = req.body.email;
+    Quiz.find({email : user_email})
+        .then (quizs => {
+            res.status(200).json({success : true, data : quizs});
+        })
+        .catch(e => {
+            res.status(404).json({success : false, details : e});
+        })
+})
+
 
 // 퀴즈 저장
 app.post('/write', async (req, res) => {
     console.log(req.body);
-    const items = [];
-    for(let i=0; i<req.body.items.length; i++) {
-        const item = {key : req.body.items[i].key, question : req.body.items[i].question, answer : req.body.items[i].answer};
-        items.push(item);
+
+    // 첫번째 문제에서는 퀴즈 생성
+    if (req.body.number == 1) {
+        // let randomCode = Math.random().toString(36).slice(2);
+        // let codeCheck = await Quiz.findOne({code : randomCode});
+
+        // while (codeCheck) {
+        //     randomCode = Math.random().toString(36).slice(2);
+        //     codeCheck = await Quiz.findOne({code : randomCode});
+        // }
+
+        Quiz.create({email : req.body.email, quiz : items, code : randomCode});
+        res.status(200).json({success : true});
+    } else {
+        // 2번째 문제부터는 만든 퀴즈에 문제 추가
+        const current_code = req.body.code;
+        Quiz.findOneAndUpdate(
+            {code : current_code},
+            {$push : {quiz : {
+                number : req.body.number,
+                question : req.body.question,
+                answer : req.body.answer,
+            }}}
+        ).then(updated => {
+            if (updated) {
+                res.status(200).json({success : true});
+            } else {
+                res.status(404).json({success : false});
+            }
+        }).catch(e => res.status(500).json({success : false, details : e}));
     }
 
-    let randomCode = Math.random().toString(36).slice(2);
-    let codeCheck = await Quiz.findOne({code : randomCode});
-
-    while (codeCheck) {
-        randomCode = Math.random().toString(36).slice(2);
-        codeCheck = await Quiz.findOne({code : randomCode});
-    }
-
-    Quiz.create({email : req.body.email, quiz : items, code : randomCode});
+    
     res.send('succeed');
 })
 
@@ -101,5 +130,9 @@ app.post('/code', async (req, res) => {
     const findQuiz = await Quiz.findOne({code : inputCode});
 
     console.log(findQuiz);
-    res.send(findQuiz);
+    if (findQuiz) {
+        res.status(200).json({success : true, data : findQuiz});
+    } else {
+        res.status(404).json({success : false, details : "Quiz not found"});
+    }
 })

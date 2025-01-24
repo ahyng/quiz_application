@@ -5,6 +5,7 @@ import 'screen/code_screen.dart';
 import 'screen/signup_screen.dart';
 import 'screen/manageQuiz_screen.dart';
 import 'screen/makeQuiz_screen.dart';
+import 'screen/solveQuiz_screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -23,7 +24,8 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => SignupScreen(),
         '/enter_code': (context) => CodeScreen(),
         '/manQuiz':(context) => ManageQuiz(),
-        '/make_quiz':(contest) => MakeQuiz()
+        '/make_quiz':(contest) => MakeQuiz(),
+        '/solve-quiz':(contest) => SolveQuiz()
       },
     );
   }

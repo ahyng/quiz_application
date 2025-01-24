@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -8,15 +9,16 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _IDController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  static const storage = FlutterSecureStorage();
   bool _isLoading = false;
 
   Future<void> _handleLogin() async {
-    String email = _emailController.text.trim();
+    String userID = _IDController.text.trim();
     String password = _passwordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
+    if (userID.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('이메일과 비밀번호를 모두 입력하세요.')),
       );
@@ -28,28 +30,44 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final url = Uri.parse('http://example.com/api/login'); // 서버의 로그인 API
+      final url = Uri.parse(''); // 서버의 로그인 API
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
+        body: jsonEncode({'userId': userID, 'password': password}),
       );
 
       if (response.statusCode == 200) {
         // 로그인 성공
         final responseData = jsonDecode(response.body);
+
+        final accessToken = responseData['accessToken'];
+        final refreshToken = responseData['refreshToken'];
+
+        // 토큰 저장
+        await _LoginScreenState.storage.write(key: 'accessToken', value: accessToken); // static으로 선언했으므로 클래스 이름으로 접근
+        await _LoginScreenState.storage.write(key: 'refreshToken', value: refreshToken);
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('로그인 성공: ${responseData['message']}')),
+          SnackBar(content: Text('로그인 성공')),
         );
 
         // 퀴즈 관리 화면으로 이동
         Navigator.pushNamed(context, '/manQuiz');
       } else {
         // 로그인 실패
-        final responseData = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('로그인 실패: ${responseData['error']}')),
+        Map<String, dynamic> responseData = jsonDecode(response.body);
+        print(responseData);
+        if (responseData["message"] == "invalid pwd"){
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('비밀번호를 확인해 주세요')),
         );
+        }
+        else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('이메일을 확인해 주세요')),
+        );
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -72,10 +90,10 @@ class _LoginScreenState extends State<LoginScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextField(
-              controller: _emailController,
+              controller: _IDController,
               decoration: InputDecoration(
-                labelText: 'e-mail',
-                hintText: 'Enter Your e-mail',
+                labelText: '아이디',
+                hintText: '아이디를 입력하세요',
                 labelStyle: TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(10.0)),
@@ -92,8 +110,8 @@ class _LoginScreenState extends State<LoginScreen> {
             TextField(
               controller: _passwordController,
               decoration: InputDecoration(
-                labelText: 'password',
-                hintText: 'Enter Your password',
+                labelText: '비밀번호',
+                hintText: '비밀번호를 입력하세요',
                 labelStyle: TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(10.0)),

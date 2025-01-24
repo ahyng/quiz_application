@@ -8,17 +8,17 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _IDController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
 
   Future<void> handleSignup() async {
-    String email = _emailController.text.trim();
+    String userID = _IDController.text.trim();
     String password = _passwordController.text.trim();
     String confirmPassword = _confirmPasswordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (userID.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('모든 빈칸을 입력하세요.')),
       );
@@ -37,18 +37,19 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      final url = Uri.parse('http://example.com/api/signup'); // 서버의 회원가입 API
+      final url = Uri.parse(''); // 서버의 회원가입 API
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
+        body: jsonEncode({'userId': userID, 'password': password}),
       );
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 200) {
         // 회원가입 성공
         final responseData = jsonDecode(response.body);
+        print(responseData);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('회원가입 성공: ${responseData['message']}')),
+          SnackBar(content: Text('회원가입 성공')),
         );
 
         // 로그인 화면으로 이동
@@ -56,9 +57,15 @@ class _SignupScreenState extends State<SignupScreen> {
       } else {
         // 회원가입 실패
         final responseData = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('회원가입 실패: ${responseData['error']}')),
+        if (responseData['message'] == 'id exists') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('이미 등록된 아이디입니다'))
+          );
+        }else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('비밀번호는 8자 이상 작성해주세요')),
         );
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -81,9 +88,9 @@ class _SignupScreenState extends State<SignupScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextField(
-              controller: _emailController,
+              controller: _IDController,
               decoration: InputDecoration(
-                labelText: '이메일',
+                labelText: '아이디',
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.emailAddress,

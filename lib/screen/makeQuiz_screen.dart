@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class MakeQuiz extends StatefulWidget {
   @override
@@ -6,41 +8,83 @@ class MakeQuiz extends StatefulWidget {
 }
 
 class _MakeQuizState extends State<MakeQuiz> {
-  int _questionNumber = 1; // 현재 문제 번호
-  String _question = ''; // 문제 텍스트
-  String _answer = ''; // 답
-  String _questionType = '객관식'; // 문제 유형 (기본값은 객관식)
-  List<Map<String, dynamic>> _questionsList = []; // 만든 문제들을 저장
+  int _questionNumber = 1;
+  String _questionType = '객관식';
+  String _code = '';
+  List<Map<String, dynamic>> _quizData = [
+    {
+      'question': '',
+      'answer': '',
+      'questionType': '객관식',
+      'options': ['', '', '', ''],
+    }
+  ];
 
-  // 객관식 문제에 대한 선택지
-  List<String> _multipleChoiceOptions = ['', '', '', ''];
+  void _saveCurrentQuestion() {
+    if (_questionNumber - 1 < _quizData.length) {
+      _quizData[_questionNumber - 1] = {
+        'number':_questionNumber,
+        'question': _quizData[_questionNumber - 1]['question'] ?? '',
+        'answer': _quizData[_questionNumber - 1]['answer'] ?? '',
+        'questionType': _questionType,
+        'code':_code,
+        'options': _questionType == '객관식'
+            ? List<String>.from(_quizData[_questionNumber - 1]['options'] ?? ['', '', '', ''])
+            : null,
+      };
+    }
+  }
 
-  // 문제 유형을 선택하는 버튼
-  void _toggleQuestionType(String type) {
+  void _loadQuestion(int questionNumber) {
     setState(() {
-      _questionType = type;
+      if (questionNumber - 1 < _quizData.length) {
+        _questionType = _quizData[questionNumber - 1]['questionType'];
+      } else {
+        _quizData.add({
+          'number': 1,
+          'question': '',
+          'answer': '',
+          'questionType': '객관식',
+          'options': ['', '', '', ''],
+          'code':'',
+        });
+      }
     });
   }
 
-  // 질문을 저장하고 넘어가기
-  void _saveQuestion() {
-    Map<String, dynamic> questionData = {
-      'question': _question,
-      'answer': _answer,
-      'questionType': _questionType,
-      'options': _questionType == '객관식' ? _multipleChoiceOptions : null,
-    };
+  Future<void> _saveAndSendQuestion() async {
+    _saveCurrentQuestion();
 
-    setState(() {
-      _questionsList.add(questionData);
-      _question = '';
-      _answer = '';
-      _multipleChoiceOptions = ['', '', '', ''];
-    });
+    try {
+      var url = Uri.parse(''); // 서버 url
+      var response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(_quizData[_questionNumber - 1]),
+      );
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('문제 저장 완료'),
-    ));
+      if (response.statusCode == 200) {
+        print('퀴즈 저장 성공: ${response.body}');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('문제 저장 완료'),
+        ));
+
+        setState(() {
+          _questionNumber++;
+          _loadQuestion(_questionNumber);
+        });
+      } else {
+        print('퀴즈 저장 실패: ${response.statusCode}');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('문제 저장 실패'),
+        ));
+      }
+    } catch (e) {
+      print('오류 발생: $e');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('오류 발생: $e'),
+      ));
+    }
   }
 
   @override
@@ -51,9 +95,8 @@ class _MakeQuizState extends State<MakeQuiz> {
         actions: [
           IconButton(
             icon: Icon(Icons.check),
-            onPressed: () {
-              // 완료 버튼 클릭 시
-              _saveQuestion();
+            onPressed: () async {
+              await _saveAndSendQuestion();
               Navigator.pushNamed(context, '/manageQuiz');
             },
           ),
@@ -64,17 +107,15 @@ class _MakeQuizState extends State<MakeQuiz> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 문제 번호 표시
             Text(
               '문제 $_questionNumber',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
-            // 문제 텍스트 입력
             TextField(
               onChanged: (text) {
                 setState(() {
-                  _question = text;
+                  _quizData[_questionNumber - 1]['question'] = text;
                 });
               },
               decoration: InputDecoration(
@@ -84,34 +125,30 @@ class _MakeQuizState extends State<MakeQuiz> {
               maxLines: 2,
             ),
             SizedBox(height: 16),
-            // 문제 유형 선택 버튼
             Row(
               children: [
                 ElevatedButton(
-                  onPressed: () => _toggleQuestionType('객관식'),
+                  onPressed: () => setState(() => _questionType = '객관식'),
                   child: Text('객관식'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _questionType == '객관식'
-                        ? Colors.blue
-                        : Colors.grey,
+                    backgroundColor: _questionType == '객관식' ? const Color.fromARGB(255, 109, 187, 250) : Colors.grey,
                   ),
                 ),
                 SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: () => _toggleQuestionType('OX'),
+                  onPressed: () => setState(() => _questionType = 'OX'),
                   child: Text('OX문제'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _questionType == 'OX' ? Colors.blue : Colors.grey,
+                    backgroundColor: _questionType == 'OX' ? const Color.fromARGB(255, 123, 196, 255) : Colors.grey,
                   ),
                 ),
               ],
             ),
             SizedBox(height: 16),
-            // 답 입력 필드
             TextField(
               onChanged: (text) {
                 setState(() {
-                  _answer = text;
+                  _quizData[_questionNumber - 1]['answer'] = text;
                 });
               },
               decoration: InputDecoration(
@@ -120,13 +157,12 @@ class _MakeQuizState extends State<MakeQuiz> {
               ),
             ),
             SizedBox(height: 16),
-            // 객관식일 때, 객관식 옵션 입력 필드
             if (_questionType == '객관식') ...[
               for (int i = 0; i < 4; i++)
                 TextField(
                   onChanged: (text) {
                     setState(() {
-                      _multipleChoiceOptions[i] = text;
+                      _quizData[_questionNumber - 1]['options'][i] = text;
                     });
                   },
                   decoration: InputDecoration(
@@ -136,40 +172,9 @@ class _MakeQuizState extends State<MakeQuiz> {
                 ),
             ],
             SizedBox(height: 16),
-            // 만든 문제들 리스트 표시 버튼
-            ElevatedButton(
-              onPressed: () {
-                // 문제 리스트 화면으로 이동
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text('문제 목록'),
-                    content: SingleChildScrollView(
-                      child: Column(
-                        children: _questionsList.map((question) {
-                          return ListTile(
-                            title: Text(question['question']),
-                            subtitle: Text('유형: ${question['questionType']}'),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text('닫기'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-              child: Text('문제 목록 보기'),
-            ),
-            SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 이전 문제로 가기 버튼
                 IconButton(
                   icon: Icon(Icons.arrow_back),
                   onPressed: _questionNumber > 1
@@ -180,13 +185,10 @@ class _MakeQuizState extends State<MakeQuiz> {
                         }
                       : null,
                 ),
-                // 다음 문제로 가기 버튼
                 IconButton(
                   icon: Icon(Icons.arrow_forward),
-                  onPressed: () {
-                    setState(() {
-                      _questionNumber++;
-                    });
+                  onPressed: () async {
+                    await _saveAndSendQuestion();
                   },
                 ),
               ],

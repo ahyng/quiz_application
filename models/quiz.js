@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const quizSchema = new mongoose.Schema(
     {
-        email : {
+        userId : {
             type : String,
             required : true,
         },
@@ -19,6 +19,14 @@ const quizSchema = new mongoose.Schema(
                 answer : {
                     type : String,
                     required : true,
+                },
+                questionType : {
+                    type : String,
+                    required : true,
+                }, 
+                options : {
+                    type : [String],
+                    required : false,
                 }
             }
         ],

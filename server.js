@@ -9,6 +9,7 @@ require("dotenv").config();
 const app = express();
 const port = 8080;
 const salt = 10;
+const jwt_secretkey = process.env.jWT_SECRET_KEY;
 
 const User = require('./models/user');
 const Quiz = require('./models/quiz');
@@ -61,8 +62,15 @@ app.post('/sign-in', async (req, res) => {
     if (user) {
         const checkPwd = await bcrypt.compare(loginPwd, user.password);
         if (checkPwd) {
+            const payload = {
+                userId : req.body.userId,
+                role : "user"
+            };
+
+            const token = jwt.sign(payload, jwt_secretkey, {expiresIn : '1h'});
+
             console.log('succeed');
-            res.status(200).json({success : true});
+            res.status(200).json({success : true, token : token});
         } else {
             console.log('failed');
             res.status(401).json({success : false, message : "invalid pwd"});

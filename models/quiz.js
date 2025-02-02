@@ -30,6 +30,18 @@ const quizSchema = new mongoose.Schema(
                 }
             }
         ],
+        result : [
+            {
+                userId : {
+                    type: String,
+                    required : true,
+                },
+                score : {
+                    type : number,
+                    required : true,
+                }
+            }
+        ],
         code : {
             type : String,
             required : true,

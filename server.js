@@ -9,7 +9,7 @@ require("dotenv").config();
 const app = express();
 const port = 8080;
 const salt = 10;
-const jwt_secretkey = process.env.jWT_SECRET_KEY;
+const jwtSecretKey = process.env.jWT_SECRET_KEY;
 
 const User = require('./models/user');
 const Quiz = require('./models/quiz');
@@ -67,7 +67,8 @@ app.post('/sign-in', async (req, res) => {
                 role : "user"
             };
 
-            const token = jwt.sign(payload, jwt_secretkey, {expiresIn : '1h'});
+            const accessToken = jwt.sign(payload, jwtSecretKey, {expiresIn : '1h'});
+            const refreshToken = jwt.sign(payload, jwtSecretKey, { expiresIn: '7d' });
 
             console.log('succeed');
             res.status(200).json({success : true, token : token});
@@ -102,6 +103,9 @@ app.get('/main', async (req, res) => {
 // 퀴즈 저장
 app.post('/write', async (req, res) => {
     console.log(await req.body);
+
+    // userId는 추후에 현재 로그인된 userId로 바꿀 예정
+    Quiz.create({userId : "anonymous", quiz : req.body.quiz, code : req.body.code});
 
     // 문제 하나씩 받는 코드
     // try {
@@ -155,7 +159,7 @@ app.post('/write', async (req, res) => {
     // }
 })
 
-// 코드 입력 받기
+// 코드 입력 받기, 해당 문제 반환
 app.post('/code', async (req, res) => {
     console.log(await req.body);
     const inputCode = await req.body.code;
@@ -172,9 +176,30 @@ app.post('/code', async (req, res) => {
     } catch (e) {
         return res.status(500).json({ success: false, details: e });
     }
-   
 })
 
-app.get('/solve-quiz', async (req, res) => {
-    res.status(200).json({success : true});
+// 문제 채점
+app.post('/solve-quiz', async (req, res) => {
+    console.log(await req.body);
+    const findQuiz = await Quiz.findOne({code : req.body.code}).quiz;
+
+    // 맞은 개수
+    let result = 0;
+    for (let i=0; i<findQuiz.length; i++) {
+        if (findQuiz[i].answer == req.body.quiz[i].answer) {
+            result += 1;
+        }
+    }
+
+    // 퀴즈 데이터에 각 학생의 점수 저장
+    Quiz.findOneAndUpdate(
+        {code : req.body.code},
+        {$push : {result : {
+            userId : "anonymous", // 추후에 현재 로그인된 userId로 바꿀 예정
+            score : result,
+        }}},
+    );
+
+    // 맞은 개수 반환
+    res.status(200).json({result : result});
 })

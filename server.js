@@ -35,6 +35,19 @@ app.listen(port, () => {
 //     res.send('Hello World!');
 // })
 
+const authenticate = (req, res, next) => {
+    const token = req.cookies.accessToken;
+    if (token) {
+        jwt.verify(token, process.env.jWT_SECRET_KEY, (err, payload) => {
+            if (err) {
+                return res.status(403).json({ message: "Invalid Token" });
+            } else {
+                req.user = payload;
+                next();
+            }
+        })
+    }
+}
 
 // 회원가입
 app.post('/sign-up', async (req, res) => {
@@ -70,6 +83,18 @@ app.post('/sign-in', async (req, res) => {
             const accessToken = jwt.sign(payload, jwtSecretKey, {expiresIn : '1h'});
             const refreshToken = jwt.sign(payload, jwtSecretKey, { expiresIn: '7d' });
 
+            res.cookie("accessToken", accessToken, {
+                httpOnly: true,  // JavaScript에서 접근 불가 (보안 강화)
+                secure: true,    // HTTPS에서만 전송
+                sameSite: "Strict"
+              });
+              
+            res.cookie("refreshToken", refreshToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: "Strict"
+            });
+
             console.log('succeed');
             res.status(200).json({success : true, token : token});
         } else {
@@ -83,8 +108,9 @@ app.post('/sign-in', async (req, res) => {
 })
 
 // 퀴즈 목록 가져오기
-app.get('/main', async (req, res) => {
-    const current_Id = await req.body.userId;
+app.get('/main', authenticate, async (req, res) => {
+    
+    const current_Id = await req.user.userId;
 
     try {
         const findData = await Quiz.find({userId : current_Id})
@@ -101,11 +127,11 @@ app.get('/main', async (req, res) => {
 
 
 // 퀴즈 저장
-app.post('/write', async (req, res) => {
-    console.log(await req.body);
+app.post('/write', authenticate, async (req, res) => {
+    console.log(await req.body, req.user);
 
     // userId는 추후에 현재 로그인된 userId로 바꿀 예정
-    Quiz.create({userId : "anonymous", quiz : req.body.quiz, code : req.body.code});
+    Quiz.create({userId : req.user.userId, quiz : req.body.quiz, code : req.body.code});
 
     // 문제 하나씩 받는 코드
     // try {
@@ -179,7 +205,7 @@ app.post('/code', async (req, res) => {
 })
 
 // 문제 채점
-app.post('/solve-quiz', async (req, res) => {
+app.post('/solve-quiz', authenticate, async (req, res) => {
     console.log(await req.body);
     const findQuiz = await Quiz.findOne({code : req.body.code}).quiz;
 
@@ -195,7 +221,7 @@ app.post('/solve-quiz', async (req, res) => {
     Quiz.findOneAndUpdate(
         {code : req.body.code},
         {$push : {result : {
-            userId : "anonymous", // 추후에 현재 로그인된 userId로 바꿀 예정
+            userId : req.user.userId,
             score : result,
         }}},
     );

@@ -8,10 +8,13 @@ const quizSchema = new mongoose.Schema(
         },
         quiz : [
             {
-                number : {
-                    type : Number,
-                    required : true,
+                title : {
+                    type : String,
                 },
+                // number : {
+                //     type : Number,
+                //     required : true,
+                // },
                 question : {
                     type : String,
                     required : true,
@@ -20,8 +23,8 @@ const quizSchema = new mongoose.Schema(
                     type : String,
                     required : true,
                 },
-                questionType : {
-                    type : String,
+                isMultipleChoice : {
+                    type : Boolean,
                     required : true,
                 }, 
                 options : {
@@ -37,7 +40,7 @@ const quizSchema = new mongoose.Schema(
                     required : true,
                 },
                 score : {
-                    type : number,
+                    type : Number,
                     required : true,
                 }
             }

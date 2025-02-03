@@ -20,7 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (userID.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('이메일과 비밀번호를 모두 입력하세요.')),
+        SnackBar(content: Text('아이디와 비밀번호를 모두 입력하세요.')),
       );
       return;
     }
@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final url = Uri.parse(''); // 서버의 로그인 API
+      final url = Uri.parse(''); // 서버 로그인 API
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -38,36 +38,32 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (response.statusCode == 200) {
-        // 로그인 성공
         final responseData = jsonDecode(response.body);
-
         final accessToken = responseData['accessToken'];
         final refreshToken = responseData['refreshToken'];
+        final cookie = response.headers['set-cookie']; // 서버에서 쿠키 받아오기
 
-        // 토큰 저장
-        await _LoginScreenState.storage.write(key: 'accessToken', value: accessToken); // static으로 선언했으므로 클래스 이름으로 접근
+        await _LoginScreenState.storage.write(key: 'accessToken', value: accessToken);
         await _LoginScreenState.storage.write(key: 'refreshToken', value: refreshToken);
         
+        if (cookie != null) {
+          await _LoginScreenState.storage.write(key: 'cookie', value: cookie);
+          print('저장된 쿠키: $cookie');
+        } else {
+          print('서버에서 쿠키를 받지 못함');
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('로그인 성공')),
         );
-
-        // 퀴즈 관리 화면으로 이동
         Navigator.pushNamed(context, '/manQuiz');
-      } else {
-        // 로그인 실패
+      }
+      else {
         Map<String, dynamic> responseData = jsonDecode(response.body);
-        print(responseData);
-        if (responseData["message"] == "invalid pwd"){
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('비밀번호를 확인해 주세요')),
-        );
-        }
-        else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('이메일을 확인해 주세요')),
-        );
-        }
+        String message = responseData["message"] == "invalid pwd"
+            ? "비밀번호를 확인해 주세요"
+            : "아이디를 확인해 주세요";
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -79,6 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

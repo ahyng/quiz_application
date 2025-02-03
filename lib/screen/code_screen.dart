@@ -26,24 +26,37 @@ class _CodeScreenState extends State<CodeScreen> {
     });
 
     try {
-      final url = Uri.parse(''); // 서버의 코드 API
+      final url = Uri.parse(''); // 서버의 API URL
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'code': code}),
-      ); 
+        body: jsonEncode({'code': code}),  // 서버에 코드 전송
+      );
+
       if (response.statusCode == 200) {
-        // 코드 입력 성공
         final responseData = jsonDecode(response.body);
-        print(responseData);
+        
+        if (responseData['success'] == true && responseData['quiz'] != null) {
+          // 퀴즈 데이터를 함께 전달
+          Navigator.pushNamed(
+            context,
+            '/solve-quiz',
+            arguments: {
+              'code': code,
+              'quizList': responseData['quiz'],  // 퀴즈 데이터 전달
+            },
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('해당 코드의 퀴즈를 찾을 수 없습니다.')),
+          );
+        }
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('확인 완료')),
+          SnackBar(content: Text('서버 오류: ${response.statusCode}')),
         );
-        // 문제 풀기 화면으로 이동
-        Navigator.pushNamed(context, '/solve-quiz', arguments: code);
-      } 
-    }
-    catch (e) {
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('에러 발생: $e')),
       );
@@ -67,15 +80,6 @@ class _CodeScreenState extends State<CodeScreen> {
               decoration: InputDecoration(
                 labelText: 'Code',
                 hintText: 'Enter Quiz Code',
-                labelStyle: TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                  borderSide: BorderSide(width: 1, color: const Color.fromARGB(255, 0, 0, 0)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                  borderSide: BorderSide(width: 1, color: const Color.fromARGB(255, 0, 0, 0)),
-                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(10.0)),
                 ),
@@ -84,7 +88,7 @@ class _CodeScreenState extends State<CodeScreen> {
             ),
             SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _handleCode, // 버튼 클릭 시 _handleCode 호출
+              onPressed: _handleCode,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFB8E0FF),
                 foregroundColor: const Color(0xFF212121),
@@ -94,7 +98,7 @@ class _CodeScreenState extends State<CodeScreen> {
                 minimumSize: Size(200, 50),
               ),
               child: _isLoading
-                  ? CircularProgressIndicator() // 로딩 중일 때 로딩 표시
+                  ? CircularProgressIndicator()
                   : Text('확인', style: TextStyle(fontSize: 20)),
             ),
           ],

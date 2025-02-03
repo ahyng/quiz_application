@@ -170,59 +170,9 @@ app.post('/write', authenticate, async (req, res) => {
         codeCheck = await Quiz.findOne({code : randomCode});
     }
 
-    Quiz.create({title : req.user.title, userId : req.user? req.user.userId : "anonymous", quiz : req.body.quizList, code : randomCode});
+    Quiz.create({userId : req.user? req.user.userId : "anonymous", quiz : req.body.quizList, code : randomCode});
     res.status(200).json({code : randomCode});
-        
-    // 문제 하나씩 받는 코드
-    // try {
-    //     // 첫번째 문제에서는 퀴즈 생성
-    //     if (req.body.number == 1) {
-    //         let randomCode = Math.random().toString(36).slice(2);
-    //         let codeCheck = await Quiz.findOne({code : randomCode});
-
-    //         while (codeCheck) {
-    //             randomCode = Math.random().toString(36).slice(2);
-    //             codeCheck = await Quiz.findOne({code : randomCode});
-    //         }
-
-    //         await Quiz.create({userId : "anonymous", 
-    //             quiz : [
-    //                 {
-    //                     number : req.body.number,
-    //                     question : req.body.question,
-    //                     answer : req.body.answer,
-    //                     questionType : req.body.questionType,
-    //                     options : req.body.options,
-    //                 }
-    //             ],
-    //             code : randomCode,
-    //         });
-    //         res.status(200).json({success : true});
-    //     } else {
-    //         // 2번째 문제부터는 만든 퀴즈에 문제 추가
-    //         const current_code = req.body.code;
-    //         console.log(req.body);
-    //         const updated = await Quiz.findOneAndUpdate(
-    //             {code : current_code},
-    //             {$push : {quiz : {
-    //                 number : req.body.number,
-    //                 question : req.body.question,
-    //                 answer : req.body.answer,
-    //                 questionType : req.body.questionType,
-    //                 options : req.body.options,
-    //             }}},
-    //             { new : true }
-    //         )
-            
-    //         if (updated) {
-    //             res.status(200).json({success : true});
-    //         } else {
-    //             res.status(404).json({success : false});
-    //         }
-    //     }
-    // } catch (e) {
-    //     return res.status(500).json({ success: false, details: e });
-    // }
+    
 })
 
 // 코드 입력 받기, 해당 문제 반환
@@ -246,40 +196,51 @@ app.post('/code', async (req, res) => {
 
 // 문제 채점
 app.post('/solve-quiz', authenticate, async (req, res) => {
-    console.log(await req.body);
-    const findQuiz = await Quiz.findOne({code : req.body.code}).quiz;
+    const inputCode = await req.body.code;
+    const findQuiz = await Quiz.findOne({code : inputCode});
+    
+    const userAnswers = await req.body.userAnswers;
 
+    console.log("findQuiz:", findQuiz);
+    console.log("userAns:", userAnswers);
     // 맞은 개수
     let score = 0;
     
     // 각 문제를 맞았는지 / 틀렸는지
-    let result = [];
+    let scoreDetails = [];
 
-    for (let i=0; i<findQuiz.length; i++) {
-        if (findQuiz[i].answer == req.body.quiz[i].answer) {
-            result.push({
-                number : i+1,
-                isCorrect : 1,
+    console.log("findquizlength:", findQuiz.quiz.length);
+
+    for (let i=0; i< findQuiz.quiz.length; i++) {
+        if (findQuiz.quiz[i].answer == userAnswers[i]) {
+            scoreDetails.push({
+                number : i,
+                isCorrect : true,
             });
             score += 1;
         } else {
-            result.push({
-                number : i+1,
-                isCorrect : 0,
+            scoreDetails.push({
+                number : i,
+                isCorrect : false,
             });
         }
+        console.log(i);
+        console.log(score);
     }
+
+    console.log("score :", score);
+    console.log("scoreDetails:", scoreDetails);
 
     // 퀴즈 데이터에 각 학생의 점수 저장
     Quiz.findOneAndUpdate(
-        {code : req.body.code},
+        {code : inputCode},
         {$push : {result : {
-            userId : req.user.userId,
+            userId : "anonymous",
             score : score,
-            result : result,
+            scoreDetails : scoreDetails,
         }}},
     );
 
     // 점수, 각 문제에 대한 채점 결과 반환
-    res.status(200).json({score : score, result : result});
+    res.status(200).json({score : score, scoreDetails : scoreDetails});
 })

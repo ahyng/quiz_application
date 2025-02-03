@@ -33,6 +33,7 @@ const quizSchema = new mongoose.Schema(
                 }
             }
         ],
+    
         result : [
             {
                 userId : {
@@ -42,13 +43,26 @@ const quizSchema = new mongoose.Schema(
                 score : {
                     type : Number,
                     required : true,
+                },
+                scoreDetails : {
+                    type : [
+                        {
+                            number : {
+                                type : Number,
+                            },
+                            isCorrect : {
+                                type : Boolean,
+                            }
+                        }
+                    ],
+                    required : true,
                 }
             }
         ],
         code : {
             type : String,
             required : true,
-        }
+        },
     }
 );
 

@@ -40,6 +40,8 @@ const refreshAcessToken = require('./routes/refreshAcessToken');
 const saveQuiz = require('./routes/save-quiz');
 const findQuiz = require('./routes/find-quiz');
 const evaluate = require('./routes/evaluate');
+const deleteQuiz = require('./routes/delete-quiz');
+const updateQuiz = require('./routes/update-quiz');
 
 app.use('/sign-up', signUpRoutes);
 app.use('/sign-in', signInRoutes);
@@ -48,3 +50,5 @@ app.use('/refresh', refreshAcessToken);
 app.use('/write', saveQuiz);
 app.use('/find-quiz', findQuiz);
 app.use('/evaluate', evaluate);
+app.use('/delete-quiz', deleteQuiz);
+app.use('/update-quiz', updateQuiz);

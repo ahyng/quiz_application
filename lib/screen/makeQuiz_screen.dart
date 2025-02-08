@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MakeQuiz extends StatefulWidget {
@@ -15,6 +15,7 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
   int questionNumber = 1;
   TextEditingController questionController = TextEditingController();
   TextEditingController answerController = TextEditingController();
+  TextEditingController titleController = TextEditingController();
   List<TextEditingController> optionControllers =
       List.generate(5, (index) => TextEditingController());
   String questionType = '객관식'; // '객관식' or 'OX'
@@ -55,95 +56,105 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
   }
 
   Future<void> submitQuiz() async {
-  saveCurrentQuestion();
+    saveCurrentQuestion();
 
-  if (quizList.isEmpty) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('오류'),
-        content: Text('퀴즈를 먼저 추가하세요!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('확인'),
-          ),
-        ],
-      ),
-    );
-    return;
-  }
-
-  String? cookie = await getCookie();
-  var url = Uri.parse(''); // 백엔드 URL
-  var headers = {
-    'Content-Type': 'application/json',
-    if (cookie != null) 'Cookie': cookie
-  };
-
-  var body = jsonEncode({
-    'quizList': quizList,
-  });
-
-  try {
-    var response = await http.post(url, headers: headers, body: body);
-
-    if (response.statusCode == 200) {
-      var responseData = jsonDecode(response.body);
-      String code = responseData['code']; // 백엔드에서 받은 퀴즈 코드
-
-      setState(() {
-        this.code = code;
-      });
-
+    if (quizList.isEmpty) {
       showDialog(
         context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('퀴즈 제출 완료'),
-            content: Text('퀴즈가 성공적으로 저장되었습니다.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // 다이얼로그 닫기
-                  showQuizCodeDialog(code); // 퀴즈 코드 다이얼로그 표시
-                },
-                child: Text('확인'),
-              ),
-            ],
-          );
-        },
+        builder: (context) => AlertDialog(
+          title: Text('오류'),
+          content: Text('퀴즈를 먼저 추가하세요!'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('확인'),
+            ),
+          ],
+        ),
       );
-
-      print('퀴즈 제출 성공: ${response.body}');
-    } else {
-      print('퀴즈 제출 실패: ${response.statusCode}');
+      return;
     }
-  } catch (e) {
-    print('서버와 연결 실패: $e');
-  }
-}
 
-void showQuizCodeDialog(String quizCode) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text('퀴즈 코드'),
-        content: Text('생성된 퀴즈 코드: $quizCode'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/manQuiz');
-            },
-            child: Text('확인'),
+    showTitleDialog();
+  }
+
+  void showTitleDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('퀴즈 제목 입력'),
+          content: TextField(
+            controller: titleController,
+            decoration: InputDecoration(hintText: '퀴즈 제목을 입력하세요'),
           ),
-        ],
-      );
-    },
-  );
-}
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                sendQuizData();
+              },
+              child: Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> sendQuizData() async {
+    String? cookie = await getCookie();
+    var url = Uri.parse(''); // 백엔드 URL
+    var headers = {
+      'Content-Type': 'application/json',
+      if (cookie != null) 'Cookie': cookie
+    };
+
+    var body = jsonEncode({
+      'title': titleController.text,
+      'quizList': quizList,
+    });
+
+    try {
+      var response = await http.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 200) {
+        var responseData = jsonDecode(response.body);
+        String code = responseData['code'];
+
+        setState(() {
+          this.code = code;
+        });
+
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('퀴즈 제출 완료'),
+              content: Text('퀴즈가 성공적으로 저장되었습니다.\n퀴즈 코드: $code'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/manQuiz');
+                  },
+                  child: Text('확인'),
+                ),
+              ],
+            );
+          },
+        );
+      } else {
+        print('퀴즈 제출 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('서버와 연결 실패: $e');
+    }
+  }
 
 
   @override

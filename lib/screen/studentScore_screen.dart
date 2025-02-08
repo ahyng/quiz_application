@@ -1,55 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-class StudentScore extends StatefulWidget {
-  final int score;
-  final int totalQuestions;
-
-  // 생성자
-  StudentScore({required this.score, required this.totalQuestions});
-
+class StudentScoreScreen extends StatefulWidget {
   @override
-  _StudentScoreState createState() => _StudentScoreState();
+  _StudentScoreScreenState createState() => _StudentScoreScreenState();
 }
 
-class _StudentScoreState extends State<StudentScore> {
+class _StudentScoreScreenState extends State<StudentScoreScreen> {
+  List<Map<String, dynamic>> _scores = [];
+  String? _quizCode;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final Map<String, dynamic>? quiz =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+    if (quiz != null) {
+      setState(() {
+        _quizCode = quiz['code'];
+      });
+      _fetchScores();
+    }
+  }
+
+  Future<void> _fetchScores() async {
+    try {
+      var url = Uri.parse('');
+      var response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        List<dynamic> result = jsonDecode(response.body);
+        setState(() {
+          _scores = List<Map<String, dynamic>>.from(result);
+          _scores.sort((a, b) => b['score'].compareTo(a['score']));
+        });
+      } else {
+        throw Exception('랭킹 데이터를 불러오지 못했습니다.');
+      }
+    } catch (e) {
+      print('오류 발생: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('학생 결과')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '퀴즈 결과',
-              style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 20),
-            Text(
-              '총 문제 수: ${widget.totalQuestions}',
-              style: TextStyle(fontSize: 20),
-            ),
-            SizedBox(height: 10),
-            Text(
-              '맞힌 문제 수: ${widget.score}',
-              style: TextStyle(fontSize: 20),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                // 홈 화면으로 돌아가기
-                Navigator.popUntil(context, ModalRoute.withName('/'));
+      appBar: AppBar(title: Text('퀴즈 랭킹')),
+      body: _scores.isEmpty
+          ? Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: _scores.length,
+              itemBuilder: (context, index) {
+                var student = _scores[index];
+                return ListTile(
+                  leading: Text('${index + 1}위'),
+                  title: Text(student['name'] ?? '이름 없음'),
+                  subtitle: Text('점수: ${student['score']}점'),
+                );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFB8E0FF),
-                foregroundColor: const Color(0xFF212121),
-              ),
-              child: Text('홈으로 돌아가기'),
             ),
-          ],
-        ),
-      ),
     );
   }
 }

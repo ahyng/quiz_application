@@ -37,7 +37,7 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      final url = Uri.parse(''); // 서버의 회원가입 API
+      final url = Uri.parse('https://8e8e-221-155-201-52.ngrok-free.app/sign-up'); // 서버의 회원가입 API
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},

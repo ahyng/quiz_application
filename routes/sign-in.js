@@ -29,13 +29,11 @@ router.post('/', async (req, res) => {
             res.cookie("accessToken", accessToken, {
                 httpOnly: true,  // JavaScript에서 접근 불가 (보안 강화)
                 secure: false,    // HTTPS에서만 전송
-                sameSite: "None"
               });
               
             res.cookie("refreshToken", refreshToken, {
                 httpOnly: true,
                 secure: false,
-                sameSite: "None"
             });
 
             console.log('succeed');

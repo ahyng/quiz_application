@@ -6,11 +6,11 @@ const quizSchema = new mongoose.Schema(
             type : String,
             required : true,
         },
+        title : {
+            type : String,
+        },
         quiz : [
             {
-                title : {
-                    type : String,
-                },
                 // number : {
                 //     type : Number,
                 //     required : true,

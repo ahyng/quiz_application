@@ -7,11 +7,11 @@ const router = express.Router();
 
 // 퀴즈 목록 가져오기
 router.post('/', authenticate, async (req, res) => {
-    
+
     // const current_Id = await req.user.userId;
 
     try {
-        const findData = await Quiz.find({userId : "anonymous"});
+        const findData = await Quiz.find({userId : "Anonymous"}).select('title code');
         if (findData) {
             res.status(200).json({success : true, quiz : findData});
         } else {

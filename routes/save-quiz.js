@@ -17,7 +17,7 @@ router.post('/', authenticate, async (req, res) => {
         codeCheck = await Quiz.findOne({code : randomCode});
     }
 
-    Quiz.create({userId : req.user? req.user.userId : "anonymous", quiz : req.body.quizList, code : randomCode});
+    Quiz.create({userId : req.user? req.user.userId : "Anonymous", title : req.body.title, quiz : req.body.quizList, code : randomCode});
     res.status(200).json({code : randomCode});
     
 })

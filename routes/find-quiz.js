@@ -5,8 +5,8 @@ const router = express.Router();
 
 // 코드 입력 받기, 해당 문제 반환
 router.post('/', async (req, res) => {
-    console.log(await req.body);
-    const inputCode = await req.body.code;
+    console.log(req.body);
+    const inputCode = req.body.code;
 
     try {
         const findQuiz = await Quiz.findOne({code : inputCode});

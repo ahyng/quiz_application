@@ -30,7 +30,7 @@ class _SolveQuizState extends State<SolveQuiz> {
 
   Future<void> _sendAnswers() async {
   try {
-    var url = Uri.parse('https://8e8e-221-155-201-52.ngrok-free.app/evaluate'); // 서버 URL로 변경
+    var url = Uri.parse(''); // 서버 URL로 변경
     var response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},

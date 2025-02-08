@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:cookie_jar/cookie_jar.dart';
-import 'package:cookie_jar/http.dart';
-import 'package:http_cookie_manager/http_cookie_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -16,15 +13,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   static const storage = FlutterSecureStorage();
   bool _isLoading = false;
-  final cookieJar = CookieJar();
-  late http.Client client;
-
-  @override
-  void initState() {
-    super.initState();
-    client = http.Client();
-    client = HttpClientWithCookieManager(CookieManager(cookieJar));
-  }
 
   Future<void> _handleLogin() async {
     String userID = _IDController.text.trim();
@@ -42,8 +30,8 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final url = Uri.parse('https://yourapi.com/login'); // 서버 로그인 API
-      final response = await client.post(
+      final url = Uri.parse(''); // 서버 로그인 API
+      final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'userId': userID, 'password': password}),
@@ -53,15 +41,24 @@ class _LoginScreenState extends State<LoginScreen> {
         final responseData = jsonDecode(response.body);
         final accessToken = responseData['accessToken'];
         final refreshToken = responseData['refreshToken'];
+        final cookie = response.headers['set-cookie']; // 서버에서 쿠키 받아오기
 
-        await storage.write(key: 'accessToken', value: accessToken);
-        await storage.write(key: 'refreshToken', value: refreshToken);
+        await _LoginScreenState.storage.write(key: 'accessToken', value: accessToken);
+        await _LoginScreenState.storage.write(key: 'refreshToken', value: refreshToken);
+        
+        if (cookie != null) {
+          await _LoginScreenState.storage.write(key: 'cookie', value: cookie);
+          print('저장된 쿠키: $cookie');
+        } else {
+          print('서버에서 쿠키를 받지 못함');
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('로그인 성공')),
         );
         Navigator.pushNamed(context, '/manQuiz');
-      } else {
+      }
+      else {
         Map<String, dynamic> responseData = jsonDecode(response.body);
         String message = responseData["message"] == "invalid pwd"
             ? "비밀번호를 확인해 주세요"
@@ -79,16 +76,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> sendRequestWithCookies() async {
-    final url = Uri.parse('https://yourapi.com/protected-route');
-    final response = await client.get(url);
-    
-    if (response.statusCode == 200) {
-      print('Response: ${response.body}');
-    } else {
-      print('Failed to load data');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,8 +91,17 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: InputDecoration(
                 labelText: '아이디',
                 hintText: '아이디를 입력하세요',
-                border: OutlineInputBorder(),
+                labelStyle: TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                  borderSide: BorderSide(width: 1, color: const Color.fromARGB(255, 0, 0, 0)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                  borderSide: BorderSide(width: 1, color: const Color.fromARGB(255, 0, 0, 0)),
+                ),
               ),
+              keyboardType: TextInputType.emailAddress,
             ),
             SizedBox(height: 16),
             TextField(
@@ -113,17 +109,42 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: InputDecoration(
                 labelText: '비밀번호',
                 hintText: '비밀번호를 입력하세요',
-                border: OutlineInputBorder(),
+                labelStyle: TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                  borderSide: BorderSide(width: 1, color: const Color.fromARGB(255, 0, 0, 0)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                  borderSide: BorderSide(width: 1, color: const Color.fromARGB(255, 0, 0, 0)),
+                ),
               ),
               obscureText: true,
             ),
             SizedBox(height: 16),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/signup');
+                },
+                child: Text('회원가입'),
+              ),
+            ),
             _isLoading
                 ? CircularProgressIndicator()
                 : ElevatedButton(
                     onPressed: _handleLogin,
-                    child: Text('로그인', style: TextStyle(fontSize: 20)),
-                  ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFB8E0FF),
+                      foregroundColor: const Color(0xFF212121),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      minimumSize: Size(200, 50),
+                    ),
+                  child: Text('로그인', style: TextStyle(fontSize: 20)),
+                ),
           ],
         ),
       ),

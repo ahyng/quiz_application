@@ -29,13 +29,12 @@ void initState() {
   Future.delayed(Duration.zero, () {
     final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
 
-    print('📥 전달된 데이터: $args'); // ✅ 전달된 데이터 확인
+    print('전달된 데이터: $args'); // 전달된 데이터 확인
 
     if (args != null) {
       titleController.text = args['title'] ?? '';
       code = args['code'] ?? '';
 
-      // 🔥 quizList를 변환해서 저장
       var quizData = args['quiz'];
       if (quizData is List) {
         quizList = List<Map<String, dynamic>>.from(quizData);
@@ -45,17 +44,17 @@ void initState() {
         quizList = [];
       }
 
-      print('🎯 quizList 로드 완료: $quizList'); // ✅ quizList 정상 로드 확인
+      print('quizList 로드 완료: $quizList'); //quizList 정상 로드 확인
 
       setState(() {}); // 화면 갱신
 
       if (quizList.isNotEmpty) {
         loadQuestion(0);
       } else {
-        print('⚠️ quizList가 비어 있음');
+        print('quizList가 비어 있음');
       }
     } else {
-      print('⚠️ arguments가 없음');
+      print('arguments가 없음');
     }
   });
 }
@@ -97,7 +96,7 @@ void initState() {
   }
 
   Future<void> sendQuizData() async {
-    var url = Uri.parse('https://8e8e-221-155-201-52.ngrok-free.app/update-quiz'); // 백엔드 URL
+    var url = Uri.parse(''); // 백엔드 URL
     var headers = {
       'Content-Type': 'application/json'
     };

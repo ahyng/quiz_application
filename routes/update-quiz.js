@@ -5,9 +5,11 @@ const router = express.Router();
 
 // 코드 입력 받기, 해당 문제 quiz 수정
 router.post('/', async (req, res) => {
-    console.log(await req.body);
-    const quizCode = await req.body.code;
-    const newQuiz = await req.body.quiz;
+    console.log(req.body);
+    const quizCode = req.body.code;
+    const newQuiz = req.body.quizList;
+
+    console.log('code:', quizCode);
 
     try {
         const result = await Quiz.findOneAndUpdate(

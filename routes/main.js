@@ -8,6 +8,8 @@ const router = express.Router();
 // 퀴즈 목록 가져오기
 router.post('/', authenticate, async (req, res) => {
 
+    console.log(req.headers);
+
     // const current_Id = await req.user.userId;
 
     try {

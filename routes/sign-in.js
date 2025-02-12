@@ -26,18 +26,19 @@ router.post('/', async (req, res) => {
             const accessToken = jwt.sign(payload, jwtSecretKey, {expiresIn : '1h'});
             const refreshToken = jwt.sign(payload, jwtSecretKey, { expiresIn: '60d' });
 
-            res.cookie("accessToken", accessToken, {
-                httpOnly: true,  // JavaScript에서 접근 불가 (보안 강화)
-                secure: false,    // HTTPS에서만 전송
-              });
+            // res.cookie("accessToken", accessToken, {
+            //     httpOnly: true,  // JavaScript에서 접근 불가 (보안 강화)
+            //     secure: false,    // HTTPS에서만 전송
+            //   });
               
             res.cookie("refreshToken", refreshToken, {
                 httpOnly: true,
                 secure: false,
+                sameSite : 'None',
             });
 
             console.log('succeed');
-            res.status(200).json({success : true, token : accessToken});
+            res.status(200).json({success : true, accessToken : accessToken});
         } else {
             console.log('failed');
             res.status(401).json({success : false, message : "invalid pwd"});

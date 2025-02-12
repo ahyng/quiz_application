@@ -12,8 +12,6 @@ app.use(express.json());
 app.use(express.urlencoded({extended : true}));
 app.use(cors({
     origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true, 
   }));
 app.use(cookieParser());
@@ -38,6 +36,7 @@ app.listen(port, () => {
 //     res.send('Hello World!');
 // })
 
+const authenticate = require('./middleware/auth');
 const signUpRoutes = require('./routes/sign-up');
 const signInRoutes = require('./routes/sign-in');
 const main = require('./routes/main');
@@ -47,6 +46,8 @@ const findQuiz = require('./routes/find-quiz');
 const evaluate = require('./routes/evaluate');
 const deleteQuiz = require('./routes/delete-quiz');
 const updateQuiz = require('./routes/update-quiz');
+
+app.use(authenticate);
 
 app.use('/sign-up', signUpRoutes);
 app.use('/sign-in', signInRoutes);

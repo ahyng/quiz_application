@@ -2,7 +2,7 @@ const express = require('express')
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-
+const client = require('./server').client;
 
 const router = express.Router();
 
@@ -26,17 +26,8 @@ router.post('/', async (req, res) => {
             const accessToken = jwt.sign(payload, jwtSecretKey, {expiresIn : '1h'});
             const refreshToken = jwt.sign(payload, jwtSecretKey, { expiresIn: '60d' });
 
-            // res.cookie("accessToken", accessToken, {
-            //     httpOnly: true,  // JavaScript에서 접근 불가 (보안 강화)
-            //     secure: false,    // HTTPS에서만 전송
-            //   });
+            await client.set(`refresh:${req.body.userId}`, refreshToken, { EX: 60 * 60 * 24 * 60 });
               
-            res.cookie("refreshToken", refreshToken, {
-                httpOnly: true,
-                secure: false,
-                sameSite : 'None',
-            });
-
             console.log('succeed');
             res.status(200).json({success : true, accessToken : accessToken});
         } else {

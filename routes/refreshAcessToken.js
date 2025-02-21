@@ -1,11 +1,12 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const client = require('./server').client
 
 const router = express.Router();
 
 // accessToken 재생성
-router.post('/', (req, res) => {
-    const refreshToken = req.cookies.refreshToken;
+router.post('/', async (req, res) => {
+    const refreshToken = await client.get(`refresh:${req.body.userId}`);
 
     if (!refreshToken) {
         res.status(401).json({message : "No refreshToken"});
@@ -17,13 +18,8 @@ router.post('/', (req, res) => {
         }
 
         const newAccessToken = jwt.sign({userId : user.id, role : 'user'});
-        res.cookie("accessToken", newAccessToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "Strict"
-        });
 
-        res.json({ message: "AccessToken refreshed" });
+        res.json({ accessToken : newAccessToken });
     })
 })
 

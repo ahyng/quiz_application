@@ -2,11 +2,13 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const redis = require('redis');
 
 require("dotenv").config();
 
 const app = express();
 const port = 8080;
+const client = redis.createClient();
 
 app.use(express.json());
 app.use(express.urlencoded({extended : true}));
@@ -16,6 +18,14 @@ app.use(cors({
   }));
 app.use(cookieParser());
 
+const redisConnect = async () => {
+    try {
+        await client.connect();
+        console.log('redis connected');
+    } catch (e) {
+        console.log(e);
+    }
+}
 
 const dbConnect = async () => {
     try {
@@ -27,6 +37,7 @@ const dbConnect = async () => {
 }
 
 dbConnect();
+redisConnect();
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)

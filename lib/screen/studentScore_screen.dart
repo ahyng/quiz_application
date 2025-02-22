@@ -27,7 +27,7 @@ class _StudentScoreScreenState extends State<StudentScoreScreen> {
 
   Future<void> _fetchScores() async {
     try {
-      var url = Uri.parse('');
+      var url = Uri.parse(''); //url
       var response = await http.get(url);
 
       if (response.statusCode == 200) {

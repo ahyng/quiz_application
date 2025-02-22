@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -13,10 +12,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   static const storage = FlutterSecureStorage();
   bool _isLoading = false;
+  final Dio dio = Dio();
 
   Future<void> _handleLogin() async {
     String userID = _IDController.text.trim();
     String password = _passwordController.text.trim();
+    
 
     if (userID.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -30,41 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final url = Uri.parse(''); // 서버 로그인 API
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'userId': userID, 'password': password}),
-      );
-
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        final accessToken = responseData['accessToken'];
-        final refreshToken = responseData['refreshToken'];
-        final cookie = response.headers['set-cookie']; // 서버에서 쿠키 받아오기
-
-        await _LoginScreenState.storage.write(key: 'accessToken', value: accessToken);
-        await _LoginScreenState.storage.write(key: 'refreshToken', value: refreshToken);
-        
-        if (cookie != null) {
-          await _LoginScreenState.storage.write(key: 'cookie', value: cookie);
-          print('저장된 쿠키: $cookie');
-        } else {
-          print('서버에서 쿠키를 받지 못함');
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('로그인 성공')),
-        );
-        Navigator.pushNamed(context, '/manQuiz');
-      }
-      else {
-        Map<String, dynamic> responseData = jsonDecode(response.body);
-        String message = responseData["message"] == "invalid pwd"
-            ? "비밀번호를 확인해 주세요"
-            : "아이디를 확인해 주세요";
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-      }
+      await login(userID, password, context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('에러 발생: $e')),
@@ -75,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     }
   }
-
+  
 
   @override
   Widget build(BuildContext context) {
@@ -91,14 +58,14 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: InputDecoration(
                 labelText: '아이디',
                 hintText: '아이디를 입력하세요',
-                labelStyle: TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
+                labelStyle: TextStyle(color: Colors.black),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                  borderSide: BorderSide(width: 1, color: const Color.fromARGB(255, 0, 0, 0)),
+                  borderSide: BorderSide(width: 1, color: Colors.black),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                  borderSide: BorderSide(width: 1, color: const Color.fromARGB(255, 0, 0, 0)),
+                  borderSide: BorderSide(width: 1, color: Colors.black),
                 ),
               ),
               keyboardType: TextInputType.emailAddress,
@@ -109,14 +76,14 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: InputDecoration(
                 labelText: '비밀번호',
                 hintText: '비밀번호를 입력하세요',
-                labelStyle: TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
+                labelStyle: TextStyle(color: Colors.black),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                  borderSide: BorderSide(width: 1, color: const Color.fromARGB(255, 0, 0, 0)),
+                  borderSide: BorderSide(width: 1, color: Colors.black),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                  borderSide: BorderSide(width: 1, color: const Color.fromARGB(255, 0, 0, 0)),
+                  borderSide: BorderSide(width: 1, color: Colors.black),
                 ),
               ),
               obscureText: true,
@@ -143,11 +110,63 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       minimumSize: Size(200, 50),
                     ),
-                  child: Text('로그인', style: TextStyle(fontSize: 20)),
-                ),
+                    child: Text('로그인', style: TextStyle(fontSize: 20)),
+                  ),
           ],
         ),
       ),
     );
   }
 }
+
+// ✅ 로그인 함수 (Dio 사용) 수정
+Future<void> login(String userID, String password, BuildContext context) async {
+  final storage = FlutterSecureStorage();
+  final dio = Dio();
+
+  try {
+    print(userID);
+    print(password);
+    final response = await dio.post(
+      'https://fa7f-221-155-201-52.ngrok-free.app/sign-in', //실제 API URL로 변경
+      data: {'userId': userID, 'password': password},
+      options: Options(
+        headers: {'Content-Type': 'application/json'},
+      ),
+    );
+
+    print("Response Data: ${response.data}");
+
+    if (response.statusCode == 200) {
+      final data = response.data;
+      if (data != null && data['accessToken'] != null) {
+        final accessToken = data['accessToken'];
+
+        await storage.write(key: "access_token", value: accessToken);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('로그인 성공')),
+        );
+
+        Navigator.pushNamed(context, '/manQuiz', arguments: accessToken,);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('로그인 응답 오류: 액세스 토큰 없음')),
+        );
+      }
+    } else {
+      final responseData = response.data;
+      String message = responseData != null && responseData["message"] == "invalid pwd"
+          ? "비밀번호를 확인해 주세요"
+          : "아이디를 확인해 주세요";
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('로그인 요청 중 오류 발생: $e')),
+    );
+  }
+  }

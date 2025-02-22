@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // 추가
 
 class ManageQuiz extends StatefulWidget {
   @override
@@ -9,6 +10,7 @@ class ManageQuiz extends StatefulWidget {
 
 class _ManageQuizScreenState extends State<ManageQuiz> {
   List<Map<String, dynamic>> quizList = [];
+  final FlutterSecureStorage storage = FlutterSecureStorage(); // 저장소 인스턴스
 
   @override
   void initState() {
@@ -16,36 +18,49 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
     fetchQuizzes();
   }
 
-  Future<void> fetchQuizzes() async {
-    try {
-      var url = Uri.parse(''); // 백엔드 URL
-      var response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "": "" // 예제 데이터 (필요 없으면 빈 `{}` 보내도 됨)
-        }),
-      );
+Future<void> fetchQuizzes() async {
+  try {
+    String? accessToken = await storage.read(key: 'access_token'); // ✅ 토큰 가져오기
 
-      if (response.statusCode == 200) {
-        var responseData = jsonDecode(response.body);
-
-        if (responseData['success'] == true) {
-          setState(() {
-            quizList = responseData['quiz'] != null
-                ? List<Map<String, dynamic>>.from(responseData['quiz'])
-                : [];
-          });
-        } else {
-          print('서버에서 데이터를 가져오지 못했습니다.');
-        }
-      } else {
-        print('퀴즈 목록을 불러오는 데 실패했습니다: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('서버 연결 실패: $e');
+    if (accessToken == null) {
+      setState(() => quizList = []);
+      print('로그인이 필요합니다.');
+      return;
     }
+
+    var url = Uri.parse(''); // ✅ 실제 URL 입력
+    var response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken', // ✅ 토큰 포함
+      },
+    );
+
+    if (response.statusCode == 200) {
+      var responseData = jsonDecode(response.body);
+
+      if (responseData['success'] == true) {
+        List<Map<String, dynamic>> newQuizList = responseData['quiz'] != null
+            ? List<Map<String, dynamic>>.from(responseData['quiz'])
+            : [];
+
+        if (mounted) {
+          setState(() => quizList = newQuizList);
+        }
+
+        if (quizList.isEmpty) print('퀴즈 목록 없음');
+      } else {
+        print('서버에서 데이터를 가져오지 못했습니다.');
+      }
+    } else {
+      print('퀴즈 목록을 불러오는 데 실패했습니다: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('서버 연결 실패: $e');
   }
+}
+
 
   void addQuiz(Map<String, dynamic> quiz) {
     setState(() {
@@ -82,30 +97,34 @@ void editQuiz(int index) async {
   String code = quizList[index]['code']; // 수정할 퀴즈 코드 가져오기
 
   try {
-    var fetchUrl = Uri.parse('');
+    var fetchUrl = Uri.parse(''); // /find-quiz
     var fetchResponse = await http.post(
       fetchUrl,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'code': code}), //수정할 퀴즈 코드 전송
     );
 
-     print('퀴즈 데이터 응답: ${fetchResponse.body}');
+    print('퀴즈 데이터 응답: ${fetchResponse.body}');
 
     if (fetchResponse.statusCode == 200) {
-      var quiz = jsonDecode(fetchResponse.body); // 기존 퀴즈 데이터 가져오기
+      var quizData = jsonDecode(fetchResponse.body); // 기존 퀴즈 데이터 가져오기
 
       Navigator.pushNamed(
         context,
         '/edit_quiz',
-        arguments: {quiz,} // 기존 퀴즈 데이터 전달
+        arguments: {
+          'title': quizData['title'],
+          'code': quizData['code'],
+          'quiz': quizData['quiz'] ?? [],
+        }, // Map 형식으로 올바르게 전달
       ).then((updatedQuiz) async {
         if (updatedQuiz != null) {
           try {
-            var updateUrl = Uri.parse('');
+            var updateUrl = Uri.parse(''); // /update-quiz
             var updateResponse = await http.post(
               updateUrl,
               headers: {'Content-Type': 'application/json'},
-              body: jsonEncode({'code': code, ...updatedQuiz as Map<String, dynamic>}), // ✅ POST로 전송
+              body: jsonEncode({'code': code, ...updatedQuiz as Map<String, dynamic>}), // ✅ 수정된 데이터 전송
             );
 
             print('퀴즈 수정 응답: ${updateResponse.body}');
@@ -158,8 +177,8 @@ void editQuiz(int index) async {
                         onPressed: () {
                           Navigator.pushNamed(
                             context,
-                            '/student_score',
-                            arguments: quiz,
+                            '/studentScore',
+                            arguments: quiz,  // 퀴즈 코드 전달
                           );
                         },
                       ),

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 class EditQuiz extends StatefulWidget {
   @override
@@ -22,43 +20,39 @@ class _EditQuizScreenState extends State<EditQuiz> {
   String code = '';
 
   @override
-  @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  Future.delayed(Duration.zero, () {
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    Future.delayed(Duration.zero, () {
+      final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
 
-    print('전달된 데이터: $args'); // 전달된 데이터 확인
+      print('전달된 데이터: $args'); // ✅ 전달된 데이터 확인
 
-    if (args != null) {
-      titleController.text = args['title'] ?? '';
-      code = args['code'] ?? '';
+      if (args != null) {
+        titleController.text = args['title'] ?? '';
+        code = args['code'] ?? '';
 
-      var quizData = args['quiz'];
-      if (quizData is List) {
-        quizList = List<Map<String, dynamic>>.from(quizData);
-      } else if (quizData is Set) {
-        quizList = List<Map<String, dynamic>>.from(quizData.toList());
+        var quizData = args['quiz'];
+        if (quizData is List) {
+          quizList = List<Map<String, dynamic>>.from(quizData);
+        } else {
+          quizList = [];
+        }
+
+        print('quizList 로드 완료: $quizList'); // ✅ quizList 정상 로드 확인
+
+        setState(() {}); // 화면 갱신
+
+        if (quizList.isNotEmpty) {
+          loadQuestion(0);
+        } else {
+          print('quizList가 비어 있음');
+        }
       } else {
-        quizList = [];
+        print('arguments가 없음');
       }
-
-      print('quizList 로드 완료: $quizList'); //quizList 정상 로드 확인
-
-      setState(() {}); // 화면 갱신
-
-      if (quizList.isNotEmpty) {
-        loadQuestion(0);
-      } else {
-        print('quizList가 비어 있음');
-      }
-    } else {
-      print('arguments가 없음');
-    }
-  });
-}
-
+    });
+  }
 
   void loadQuestion(int index) {
     if (index < quizList.length) {
@@ -96,6 +90,13 @@ void initState() {
   }
 
   Future<void> sendQuizData() async {
+    saveCurrentQuestion();
+
+    print('보내는 데이터: ${jsonEncode({
+    'code': code,
+    'quizList': quizList,
+  })}');
+
     var url = Uri.parse(''); // 백엔드 URL
     var headers = {
       'Content-Type': 'application/json'
@@ -103,7 +104,6 @@ void initState() {
 
     var body = jsonEncode({
       'code': code, // 기존 퀴즈 코드 유지
-      'title': titleController.text,
       'quizList': quizList,
     });
 
@@ -145,7 +145,10 @@ void initState() {
         actions: [
           IconButton(
             icon: Icon(Icons.check),
-            onPressed: sendQuizData,
+            onPressed: () {
+              saveCurrentQuestion(); //마지막 문제 저장
+              sendQuizData();
+            },
           ),
         ],
       ),

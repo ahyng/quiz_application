@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class MakeQuiz extends StatefulWidget {
   @override
@@ -10,6 +9,7 @@ class MakeQuiz extends StatefulWidget {
 }
 
 class _MakeQuizScreenState extends State<MakeQuiz> {
+  final FlutterSecureStorage storage = FlutterSecureStorage();
   List<Map<String, dynamic>> quizList = [];
   int currentIndex = 0;
   int questionNumber = 1;
@@ -20,16 +20,6 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
       List.generate(5, (index) => TextEditingController());
   String questionType = '객관식'; // '객관식' or 'OX'
   String code = '';
-
-  Future<void> saveCookie(String cookie) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('cookie', cookie);
-  }
-
-  Future<String?> getCookie() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('cookie');
-  }
 
   void saveCurrentQuestion() {
     if (questionController.text.isNotEmpty) {
@@ -107,11 +97,12 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
   }
 
   Future<void> sendQuizData() async {
-    String? cookie = await getCookie();
-    var url = Uri.parse(''); // 백엔드 URL
+    String? accessToken = await storage.read(key: 'access_token'); // ✅ 토큰 가져오기
+
+    var url = Uri.parse(''); // 백엔드 URL 입력
     var headers = {
       'Content-Type': 'application/json',
-      if (cookie != null) 'Cookie': cookie
+      if (accessToken != null) 'Authorization': 'Bearer $accessToken', // ✅ 토큰 추가
     };
 
     var body = jsonEncode({
@@ -211,6 +202,9 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
               controller: answerController,
               decoration: InputDecoration(
                 labelText: '정답 입력',
+                hintText: questionType == '객관식' 
+                    ? '1, 2, 3, 4, 5 중 하나를 입력하세요' 
+                    : 'O 또는 X를 입력하세요',
                 border: OutlineInputBorder(),
               ),
             ),

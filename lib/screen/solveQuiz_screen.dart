@@ -14,6 +14,7 @@ class _SolveQuizState extends State<SolveQuiz> {
   int _score = 0;
   String? code;
   String? _resultMessage;
+  String _userName = '';
 
   @override
   void didChangeDependencies() {
@@ -29,38 +30,68 @@ class _SolveQuizState extends State<SolveQuiz> {
   }
 
   Future<void> _sendAnswers() async {
-  try {
-    var url = Uri.parse(''); // 서버 URL로 변경
-    var response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'code': code,
-        'userAnswers': _userAnswers.map((answer) {
-          if (answer != null) {
-            return (int.parse(answer) + 1).toString(); // 0-based index를 1-based로 변환
-          }
-          return null;
-        }).toList(),
-        'name': '사용자 이름', // 여기에 사용자 이름 추가
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      Map<String, dynamic> result = jsonDecode(response.body);
-      setState(() {
-        _score = result['score'];
-        _resultMessage = result['result'];
-      });
-      _showResultDialog();
-    } else {
-      _showSnackBar('답안 전송에 실패했습니다.');
+    if (_userName.isEmpty) {
+      _showNameDialog();
+      return;
     }
-  } catch (e) {
-    _showSnackBar('오류 발생: $e');
-  }
-}
 
+    try {
+      var url = Uri.parse(''); // 서버 URL로 변경
+      var response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'code': code,
+          'userAnswers': _userAnswers.map((answer) {
+            if (answer != null) {
+              return (int.parse(answer) + 1).toString(); // 0-based index를 1-based로 변환
+            }
+            return null;
+          }).toList(),
+          'name': _userName,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> result = jsonDecode(response.body);
+        setState(() {
+          _score = result['score'];
+          _resultMessage = result['result'];
+        });
+        _showResultDialog();
+      } else {
+        _showSnackBar('답안 전송에 실패했습니다.');
+      }
+    } catch (e) {
+      _showSnackBar('오류 발생: $e');
+    }
+  }
+
+  void _showNameDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('이름 입력'),
+        content: TextField(
+          onChanged: (value) {
+            _userName = value;
+          },
+          decoration: InputDecoration(hintText: '이름을 입력하세요'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (_userName.isNotEmpty) {
+                Navigator.of(context).pop();
+                _sendAnswers();
+              }
+            },
+            child: Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _showResultDialog() {
     showDialog(

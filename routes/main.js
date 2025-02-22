@@ -9,11 +9,12 @@ const router = express.Router();
 router.post('/', authenticate, async (req, res) => {
 
     console.log(req.headers);
+    console.log('user: ', req.user);
 
     // const current_Id = await req.user.userId;
 
     try {
-        const findData = await Quiz.find({userId : "Anonymous"}).select('title code');
+        const findData = await Quiz.find({userId : req.user.userId}).select('title code');
         if (findData) {
             res.status(200).json({success : true, quiz : findData});
         } else {

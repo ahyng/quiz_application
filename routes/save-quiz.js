@@ -19,7 +19,7 @@ router.post('/', authenticate, async (req, res) => {
 
     console.log('user1:', req.user);
 
-    awaitQuiz.create({userId : req.user? req.user.userId : "Anonymous", title : req.body.title, quiz : req.body.quizList, code : randomCode});
+    await Quiz.create({userId : req.user? req.user.userId : "Anonymous", title : req.body.title, quiz : req.body.quizList, code : randomCode});
     res.status(200).json({code : randomCode});
     
 })

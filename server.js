@@ -2,13 +2,15 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const redis = require('redis');
+// const redis = require('redis');
 
 require("dotenv").config();
 
 const app = express();
 const port = 8080;
-const client = redis.createClient();
+// const client = redis.createClient({
+//     url: "redis://localhost:6379"
+// })
 
 app.use(express.json());
 app.use(express.urlencoded({extended : true}));
@@ -17,15 +19,6 @@ app.use(cors({
     credentials: true, 
   }));
 app.use(cookieParser());
-
-const redisConnect = async () => {
-    try {
-        await client.connect();
-        console.log('redis connected');
-    } catch (e) {
-        console.log(e);
-    }
-}
 
 const dbConnect = async () => {
     try {
@@ -37,7 +30,10 @@ const dbConnect = async () => {
 }
 
 dbConnect();
-redisConnect();
+
+// client.on('connect', () => {
+//     console.log('Connected to Redis');
+// });
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
@@ -57,8 +53,9 @@ const findQuiz = require('./routes/find-quiz');
 const evaluate = require('./routes/evaluate');
 const deleteQuiz = require('./routes/delete-quiz');
 const updateQuiz = require('./routes/update-quiz');
+const authCheck = require('./routes/auth-check');
 
-app.use(authenticate);
+// app.use(authenticate);
 
 app.use('/sign-up', signUpRoutes);
 app.use('/sign-in', signInRoutes);
@@ -69,3 +66,4 @@ app.use('/find-quiz', findQuiz);
 app.use('/evaluate', evaluate);
 app.use('/delete-quiz', deleteQuiz);
 app.use('/update-quiz', updateQuiz);
+app.use('/auth-check', authCheck);

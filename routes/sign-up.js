@@ -8,7 +8,7 @@ const salt = 10;
 
 // 회원가입
 router.post('/', async (req, res) => {
-    console.log(await req.body);
+    console.log(req.body);
     const pwdCheck = req.body.password.length >= 8;
     const idCheck = await User.findOne({userId : req.body.userId});
 

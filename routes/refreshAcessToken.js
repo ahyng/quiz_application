@@ -1,12 +1,12 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const client = require('./server').client
+// const client = require('../server').client
 
 const router = express.Router();
 
 // accessToken 재생성
 router.post('/', async (req, res) => {
-    const refreshToken = await client.get(`refresh:${req.body.userId}`);
+    // const refreshToken = await client.get(`refresh:${req.body.userId}`);
 
     if (!refreshToken) {
         res.status(401).json({message : "No refreshToken"});

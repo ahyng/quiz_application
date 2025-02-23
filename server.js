@@ -2,15 +2,11 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-// const redis = require('redis');
 
 require("dotenv").config();
 
 const app = express();
 const port = 8080;
-// const client = redis.createClient({
-//     url: "redis://localhost:6379"
-// })
 
 app.use(express.json());
 app.use(express.urlencoded({extended : true}));
@@ -54,6 +50,7 @@ const evaluate = require('./routes/evaluate');
 const deleteQuiz = require('./routes/delete-quiz');
 const updateQuiz = require('./routes/update-quiz');
 const authCheck = require('./routes/auth-check');
+const logOut = require('./routes/log-out');
 
 // app.use(authenticate);
 
@@ -67,3 +64,4 @@ app.use('/evaluate', evaluate);
 app.use('/delete-quiz', deleteQuiz);
 app.use('/update-quiz', updateQuiz);
 app.use('/auth-check', authCheck);
+app.use('/log-out', logOut);

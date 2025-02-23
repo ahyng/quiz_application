@@ -2,7 +2,7 @@ const express = require('express')
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-// const client = require('./server').client;
+const client = require('./redis-client');
 
 const router = express.Router();
 
@@ -26,7 +26,9 @@ router.post('/', async (req, res) => {
             const accessToken = jwt.sign(payload, jwtSecretKey, {expiresIn : '1h'});
             const refreshToken = jwt.sign(payload, jwtSecretKey, { expiresIn: '60d' });
 
-            // await client.set(`refresh:${req.body.userId}`, refreshToken, { EX: 60 * 60 * 24 * 60 }); // 60일
+            const expirationTime = 60 * 60 * 24 * 60; // 60일
+
+            await client.set(`refresh:${req.body.userId}`, refreshToken, 'EX', expirationTime);
               
             console.log('succeed');
             res.status(200).json({success : true, accessToken : accessToken});

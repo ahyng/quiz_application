@@ -5,11 +5,11 @@ const authenticate = require('../middleware/auth');
 const router = express.Router();
 
 // 문제 채점
-router.post('/', authenticate, async (req, res) => {
-    const inputCode = await req.body.code;
+router.post('/', async (req, res) => {
+    const inputCode = req.body.code;
     const findQuiz = await Quiz.findOne({code : inputCode});
     
-    const userAnswers = await req.body.userAnswers;
+    const userAnswers = req.body.userAnswers;
 
     console.log("findQuiz:", findQuiz);
     console.log("userAns:", userAnswers);
@@ -45,7 +45,7 @@ router.post('/', authenticate, async (req, res) => {
     Quiz.findOneAndUpdate(
         {code : inputCode},
         {$push : {result : {
-            userId : "anonymous",
+            name : req.userName,
             score : score,
             scoreDetails : scoreDetails,
         }}},

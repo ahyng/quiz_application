@@ -36,7 +36,7 @@ const quizSchema = new mongoose.Schema(
     
         result : [
             {
-                userId : {
+                name : {
                     type: String,
                     required : true,
                 },

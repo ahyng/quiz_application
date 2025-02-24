@@ -1,0 +1,2 @@
+/home/user/바탕화면/프로젝트/flutter/quizapp/android/app/.cxx/RelWithDebInfo/35602v36/x86_64/CMakeFiles/edit_cache.dir
+/home/user/바탕화면/프로젝트/flutter/quizapp/android/app/.cxx/RelWithDebInfo/35602v36/x86_64/CMakeFiles/rebuild_cache.dir

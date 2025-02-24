@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SolveQuiz extends StatefulWidget {
   @override
@@ -36,7 +37,7 @@ class _SolveQuizState extends State<SolveQuiz> {
     }
 
     try {
-      var url = Uri.parse(''); // 서버 URL로 변경
+      var url = Uri.parse('${dotenv.env['ADDRESS']}/evaluate'); // 서버 URL로 변경
       var response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -131,8 +132,8 @@ class _SolveQuizState extends State<SolveQuiz> {
 
     var currentQuestion = _quizList[_currentQuestionIndex];
     String questionText = currentQuestion['question'] ?? '';
-    String questionType = currentQuestion['type'] ?? 'multiple';
     List<dynamic> options = currentQuestion['options'] ?? [];
+    bool isMultipleChoice = currentQuestion['isMultipleChoice'] ?? false;
 
     return Scaffold(
       appBar: AppBar(title: Text('퀴즈 풀기')),
@@ -151,7 +152,7 @@ class _SolveQuizState extends State<SolveQuiz> {
               style: TextStyle(fontSize: 20),
             ),
             SizedBox(height: 16),
-            if (questionType == 'OX')
+            if (isMultipleChoice == false)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -162,7 +163,7 @@ class _SolveQuizState extends State<SolveQuiz> {
                       });
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _userAnswers[_currentQuestionIndex] == 'O' ? Colors.blue : Colors.grey,
+                      backgroundColor: _userAnswers[_currentQuestionIndex] == 'O' ? const Color.fromRGBO(114, 247, 252, 1) : const Color.fromARGB(255, 0, 213, 213),
                     ),
                     child: Text('O'),
                   ),
@@ -174,7 +175,7 @@ class _SolveQuizState extends State<SolveQuiz> {
                       });
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _userAnswers[_currentQuestionIndex] == 'X' ? Colors.blue : Colors.grey,
+                      backgroundColor: _userAnswers[_currentQuestionIndex] == 'X' ? const Color.fromARGB(114, 247, 252, 1) : const Color.fromARGB(255, 74, 206, 210),
                     ),
                     child: Text('X'),
                   ),

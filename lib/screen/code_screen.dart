@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class CodeScreen extends StatefulWidget {
   @override
@@ -26,7 +27,7 @@ class _CodeScreenState extends State<CodeScreen> {
     });
 
     try {
-      final url = Uri.parse(''); // 서버의 API URL
+      final url = Uri.parse('${dotenv.env['ADDRESS']}/find-quiz'); // 서버의 API URL
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},

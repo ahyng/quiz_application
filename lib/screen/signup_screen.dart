@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SignupScreen extends StatefulWidget {
   @override
@@ -37,7 +38,7 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      final url = Uri.parse(''); // 서버의 회원가입 API
+      final url = Uri.parse('${dotenv.env['ADDRESS']}/sign-up'); // 서버의 회원가입 API
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -119,16 +120,14 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// ✅ 로그인 함수 (Dio 사용) 수정
+// 로그인 함수 Dio 사용
 Future<void> login(String userID, String password, BuildContext context) async {
   final storage = FlutterSecureStorage();
   final dio = Dio();
 
   try {
-    print(userID);
-    print(password);
     final response = await dio.post(
-      'https://fa7f-221-155-201-52.ngrok-free.app/sign-in', //실제 API URL로 변경
+      '${dotenv.env['ADDRESS']}/sign-in', //실제 API URL로 변경
       data: {'userId': userID, 'password': password},
       options: Options(
         headers: {'Content-Type': 'application/json'},
@@ -148,7 +147,7 @@ Future<void> login(String userID, String password, BuildContext context) async {
           SnackBar(content: Text('로그인 성공')),
         );
 
-        Navigator.pushNamed(context, '/manQuiz', arguments: accessToken,);
+        Navigator.pushReplacementNamed(context, '/manQuiz', arguments: accessToken,);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('로그인 응답 오류: 액세스 토큰 없음')),

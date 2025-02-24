@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class MakeQuiz extends StatefulWidget {
@@ -97,12 +98,12 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
   }
 
   Future<void> sendQuizData() async {
-    String? accessToken = await storage.read(key: 'access_token'); // ✅ 토큰 가져오기
+    String? accessToken = await storage.read(key: 'access_token'); // 토큰 가져오기
 
-    var url = Uri.parse(''); // 백엔드 URL 입력
+    var url = Uri.parse('${dotenv.env['ADDRESS']}/write'); // 백엔드 URL 입력
     var headers = {
       'Content-Type': 'application/json',
-      if (accessToken != null) 'Authorization': 'Bearer $accessToken', // ✅ 토큰 추가
+      if (accessToken != null) 'Authorization': 'Bearer $accessToken', // 토큰 추가
     };
 
     var body = jsonEncode({

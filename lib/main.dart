@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dio/dio.dart';
 import 'screen/home_screen.dart';
 import 'screen/login_screen.dart';
@@ -13,13 +14,14 @@ import 'screen/eiditQuiz_scree.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: "assets/.env");
 
   final dio = Dio();
   dio.options.headers = {
     'Content-Type': 'application/json',
   };
 
-  // ✅ 스토리지에서 accessToken 불러오기
+  // 스토리지에서 accessToken 불러오기
   final storage = FlutterSecureStorage();
   String? accessToken = await storage.read(key: "access_token");
 

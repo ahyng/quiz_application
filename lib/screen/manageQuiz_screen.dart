@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // 추가
 
 class ManageQuiz extends StatefulWidget {
@@ -20,7 +22,7 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
 
 Future<void> fetchQuizzes() async {
   try {
-    String? accessToken = await storage.read(key: 'access_token'); // ✅ 토큰 가져오기
+    String? accessToken = await storage.read(key: 'access_token'); // 토큰 가져오기
 
     if (accessToken == null) {
       setState(() => quizList = []);
@@ -28,12 +30,12 @@ Future<void> fetchQuizzes() async {
       return;
     }
 
-    var url = Uri.parse(''); // ✅ 실제 URL 입력
+    var url = Uri.parse('${dotenv.env['ADDRESS']}/main'); // 실제 URL 입력
     var response = await http.post(
       url,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $accessToken', // ✅ 토큰 포함
+        'Authorization': 'Bearer $accessToken', // 토큰 포함
       },
     );
 
@@ -72,7 +74,7 @@ Future<void> fetchQuizzes() async {
     String code = quizList[index]['code']; // 삭제할 퀴즈 코드 가져오기
 
     try {
-      var url = Uri.parse(''); // 백엔드 URL 확인
+      var url = Uri.parse('${dotenv.env['ADDRESS']}/delete-quiz'); // 백엔드 URL 확인
       var response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -97,7 +99,7 @@ void editQuiz(int index) async {
   String code = quizList[index]['code']; // 수정할 퀴즈 코드 가져오기
 
   try {
-    var fetchUrl = Uri.parse(''); // /find-quiz
+    var fetchUrl = Uri.parse('${dotenv.env['ADDRESS']}/find-quiz'); // /find-quiz
     var fetchResponse = await http.post(
       fetchUrl,
       headers: {'Content-Type': 'application/json'},
@@ -120,11 +122,11 @@ void editQuiz(int index) async {
       ).then((updatedQuiz) async {
         if (updatedQuiz != null) {
           try {
-            var updateUrl = Uri.parse(''); // /update-quiz
+            var updateUrl = Uri.parse('${dotenv.env['ADDRESS']}/update-quiz'); // /update-quiz
             var updateResponse = await http.post(
               updateUrl,
               headers: {'Content-Type': 'application/json'},
-              body: jsonEncode({'code': code, ...updatedQuiz as Map<String, dynamic>}), // ✅ 수정된 데이터 전송
+              body: jsonEncode({'code': code, ...updatedQuiz as Map<String, dynamic>}), // 수정된 데이터 전송
             );
 
             print('퀴즈 수정 응답: ${updateResponse.body}');
@@ -149,12 +151,57 @@ void editQuiz(int index) async {
   }
 }
 
+Future<void> logout(BuildContext context) async {
+  final storage = FlutterSecureStorage();
+  final dio = Dio();
 
+  try {
+    String? accessToken = await storage.read(key: 'access_token'); // 기존 토큰 유지
+    if (accessToken == null) {
+      Navigator.pushReplacementNamed(context, '/login'); // 로그인 화면으로 이동
+      return;
+    }
+
+    var response = await dio.post(
+      '${dotenv.env['ADDRESS']}/log-out', // 백엔드 로그아웃 API
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $accessToken', // 현재 토큰으로 로그아웃 요청
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      print('로그아웃 성공');
+    } else {
+      print('로그아웃 실패: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('로그아웃 요청 중 오류 발생: $e');
+  } finally {
+    Navigator.pushReplacementNamed(context, '/login'); // 로그인 화면으로 이동 (토큰 삭제 안 함)
+  }
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('퀴즈 관리')),
+      appBar: AppBar(
+        title: Text('퀴즈 관리'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () async{
+              logout(context);  // 로그아웃 함수 호출
+              Navigator.pushNamed(
+                  context,
+                  '/login',
+              );
+            },
+          ),
+        ],
+      ),
       body: Column(
         children: <Widget>[
           Expanded(

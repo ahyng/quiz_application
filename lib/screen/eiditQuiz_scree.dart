@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class EditQuiz extends StatefulWidget {
   @override
@@ -26,7 +27,7 @@ class _EditQuizScreenState extends State<EditQuiz> {
     Future.delayed(Duration.zero, () {
       final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
 
-      print('전달된 데이터: $args'); // ✅ 전달된 데이터 확인
+      print('전달된 데이터: $args'); // 전달된 데이터 확인
 
       if (args != null) {
         titleController.text = args['title'] ?? '';
@@ -39,7 +40,7 @@ class _EditQuizScreenState extends State<EditQuiz> {
           quizList = [];
         }
 
-        print('quizList 로드 완료: $quizList'); // ✅ quizList 정상 로드 확인
+        print('quizList 로드 완료: $quizList'); // quizList 정상 로드 확인
 
         setState(() {}); // 화면 갱신
 
@@ -97,7 +98,7 @@ class _EditQuizScreenState extends State<EditQuiz> {
     'quizList': quizList,
   })}');
 
-    var url = Uri.parse(''); // 백엔드 URL
+    var url = Uri.parse('${dotenv.env['ADDRESS']}/update-quiz'); // 백엔드 URL
     var headers = {
       'Content-Type': 'application/json'
     };

@@ -11,6 +11,7 @@ import 'screen/makeQuiz_screen.dart';
 import 'screen/solveQuiz_screen.dart';
 import 'screen/studentScore_screen.dart';
 import 'screen/eiditQuiz_scree.dart';
+import 'screen/quizResult_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +54,7 @@ class MyApp extends StatelessWidget {
         '/solve-quiz': (context) => SolveQuiz(),
         '/edit_quiz': (context) => EditQuiz(),
         '/student_score': (context) => StudentScoreScreen(),
+        '/quizresult' : (context) => QuizResult(),
       },
     );
   }

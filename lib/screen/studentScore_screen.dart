@@ -27,14 +27,22 @@ class _StudentScoreScreenState extends State<StudentScoreScreen> {
   }
 
   Future<void> _fetchScores() async {
+    if (_quizCode == null) return;
+
     try {
-      var url = Uri.parse(''); //url
-      var response = await http.get(url);
+      var url = Uri.parse('${dotenv.env['ADDRESS']}/ranking');
+      var response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'code': _quizCode}),
+      );
 
       if (response.statusCode == 200) {
-        List<dynamic> result = jsonDecode(response.body);
+        var responseData = jsonDecode(response.body);
+        print('서버 응답: ${response.body}');
+
         setState(() {
-          _scores = List<Map<String, dynamic>>.from(result);
+          _scores = List<Map<String, dynamic>>.from(responseData['ranking']);
           _scores.sort((a, b) => b['score'].compareTo(a['score']));
         });
       } else {
@@ -44,6 +52,34 @@ class _StudentScoreScreenState extends State<StudentScoreScreen> {
       print('오류 발생: $e');
     }
   }
+
+  void _viewQuizResult(String studentName) async {
+  if (_quizCode == null) return;
+  
+  try {
+    var url = Uri.parse('${dotenv.env['ADDRESS']}/ranking-detail');
+    var response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'code': _quizCode, 'name': studentName}),
+    );
+
+    if (response.statusCode == 200) {
+      var responseData = jsonDecode(response.body);
+      print('서버 응답 본문: ${response.body}');
+
+      if (responseData['data'] != null && responseData['data'] is List) {
+        Navigator.pushNamed(context, '/quizresult', arguments: responseData['data']);
+      } else {
+        throw Exception('잘못된 데이터 형식');
+      }
+    } else {
+      throw Exception('퀴즈 결과를 불러오지 못했습니다.');
+    }
+  } catch (e) {
+    print('오류 발생: $e');
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -55,14 +91,34 @@ class _StudentScoreScreenState extends State<StudentScoreScreen> {
               itemCount: _scores.length,
               itemBuilder: (context, index) {
                 var student = _scores[index];
-                return ListTile(
-                  leading: Text('${index + 1}위'),
-                  title: Text(student['name'] ?? '이름 없음'),
-                  subtitle: Text('점수: ${student['score']}점'),
+                bool isPerfect = student['perfectScore'] ?? false;
+                int rank = index + 1;
+                if (index > 0 && _scores[index]['score'] == _scores[index - 1]['score']) {
+                  rank = index;
+                }
+
+                return Container(
+                  decoration: BoxDecoration(
+                    color: isPerfect ? Colors.lightBlue.shade100 : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: ListTile(
+                    leading: Text('$rank위'),
+                    title: Text(
+                      student['name'] ?? '이름 없음',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text('점수: ${student['score']}점'),
+                    trailing: ElevatedButton(
+                      onPressed: () => _viewQuizResult(student['name']),
+                      child: Text('결과 보기'),
+                    ),
+                  ),
                 );
               },
             ),
     );
   }
 }
-

@@ -161,7 +161,10 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
           ),
         ],
       ),
-      body: Padding(
+      body: GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(), // 빈 화면 탭하면 키보드 닫힘
+      child: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag, // 스크롤하면 키보드 닫힘
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,9 +262,11 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
                 '퀴즈 코드: $code',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
               ),
+        
           ],
         ),
       ),
+    ),
     );
   }
 }

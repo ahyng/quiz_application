@@ -22,11 +22,14 @@ class _SolveQuizState extends State<SolveQuiz> {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
     if (args != null) {
-      setState(() {
-        code = args['code'];
-        _quizList = args['quizList'] ?? [];
+      code = args['code'];
+      _quizList = args['quizList'] ?? [];
+      
+      /// ❌ 기존 코드: `_userAnswers`를 무조건 `null`로 초기화 → 값이 덮어씌워짐
+      /// ✅ 수정: `_userAnswers`가 비어 있거나 길이가 다를 때만 초기화
+      if (_userAnswers.isEmpty || _userAnswers.length != _quizList.length) {
         _userAnswers = List.filled(_quizList.length, null);
-      });
+      }
     }
   }
 
@@ -37,7 +40,7 @@ class _SolveQuizState extends State<SolveQuiz> {
     }
 
     try {
-      var url = Uri.parse('${dotenv.env['ADDRESS']}/evaluate'); // 서버 URL로 변경
+      var url = Uri.parse('${dotenv.env['ADDRESS']}/evaluate');
       var response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -45,7 +48,11 @@ class _SolveQuizState extends State<SolveQuiz> {
           'code': code,
           'userAnswers': _userAnswers.map((answer) {
             if (answer != null) {
-              return (int.parse(answer) + 1).toString(); // 0-based index를 1-based로 변환
+              if (answer == 'O' || answer == 'X') {
+                return answer; // OX 문제는 그대로 전송
+              } else {
+                return (int.parse(answer)).toString(); // 객관식 문제는 1부터 시작하도록 저장
+              }
             }
             return null;
           }).toList(),
@@ -99,11 +106,19 @@ class _SolveQuizState extends State<SolveQuiz> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('결과'),
-        content: Text('총 ${_quizList.length} 문제 중 $_score 문제를 맞히셨습니다.\n$_resultMessage'),
+        content: Text('총 ${_quizList.length} 문제 중 $_score 문제를 맞히셨습니다.'),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              Navigator.pushNamed(
+                context, 
+                '/quizresult',
+                arguments: {
+                  'quizList': _quizList,
+                  'userAnswers': _userAnswers,
+                  'score': _score,
+                  }
+                );
               setState(() {
                 _currentQuestionIndex = 0;
                 _userAnswers = List.filled(_quizList.length, null);
@@ -152,7 +167,8 @@ class _SolveQuizState extends State<SolveQuiz> {
               style: TextStyle(fontSize: 20),
             ),
             SizedBox(height: 16),
-            if (isMultipleChoice == false)
+            
+            if (!isMultipleChoice)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -161,9 +177,10 @@ class _SolveQuizState extends State<SolveQuiz> {
                       setState(() {
                         _userAnswers[_currentQuestionIndex] = 'O';
                       });
+                      print('Updated Answers: $_userAnswers');
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _userAnswers[_currentQuestionIndex] == 'O' ? const Color.fromRGBO(114, 247, 252, 1) : const Color.fromARGB(255, 0, 213, 213),
+                      backgroundColor: _userAnswers[_currentQuestionIndex] == 'O' ? const Color.fromARGB(255, 136, 180, 255) : const Color.fromARGB(255, 255, 255, 255),
                     ),
                     child: Text('O'),
                   ),
@@ -173,9 +190,10 @@ class _SolveQuizState extends State<SolveQuiz> {
                       setState(() {
                         _userAnswers[_currentQuestionIndex] = 'X';
                       });
+                      print('Updated Answers: $_userAnswers');
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _userAnswers[_currentQuestionIndex] == 'X' ? const Color.fromARGB(114, 247, 252, 1) : const Color.fromARGB(255, 74, 206, 210),
+                      backgroundColor: _userAnswers[_currentQuestionIndex] == 'X' ? const Color.fromARGB(255, 136, 180, 255) : const Color.fromARGB(255, 255, 255, 255),
                     ),
                     child: Text('X'),
                   ),
@@ -188,16 +206,18 @@ class _SolveQuizState extends State<SolveQuiz> {
                   String option = entry.value;
                   return RadioListTile<String>(
                     title: Text(option),
-                    value: idx.toString(),
+                    value: (idx + 1).toString(), // 1부터 시작
                     groupValue: _userAnswers[_currentQuestionIndex],
                     onChanged: (value) {
                       setState(() {
                         _userAnswers[_currentQuestionIndex] = value;
                       });
+                      print('Updated Answers: $_userAnswers');
                     },
                   );
                 }).toList(),
               ),
+
             SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

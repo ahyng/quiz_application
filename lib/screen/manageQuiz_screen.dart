@@ -151,6 +151,37 @@ void editQuiz(int index) async {
   }
 }
 
+Future<void> fetchRanking(String code) async {
+  try {
+    var url = Uri.parse('${dotenv.env['ADDRESS']}/ranking'); // 랭킹 조회 API
+    var response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'code': code}), // 퀴즈 코드 전송
+    );
+    print('서버 응답: ${response.body}');
+
+    if (response.statusCode == 200) {
+      var rankingData = jsonDecode(response.body);
+
+      // ✅ ranking 필드 존재 여부만 확인
+      if (rankingData.containsKey('ranking')) {
+        Navigator.pushNamed(
+          context,
+          '/student_score',
+          arguments: {'code': code, 'ranking': rankingData['ranking']}, // 랭킹 정보 전달
+        );
+      } else {
+        print('랭킹 데이터를 가져오지 못했습니다.');
+      }
+    } else {
+      print('랭킹 조회 실패: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('서버 연결 실패: $e');
+  }
+}
+
 Future<void> logout(BuildContext context) async {
   final storage = FlutterSecureStorage();
   final dio = Dio();
@@ -221,13 +252,7 @@ Future<void> logout(BuildContext context) async {
                       ),
                       IconButton(
                         icon: Icon(Icons.visibility),
-                        onPressed: () {
-                          Navigator.pushNamed(
-                            context,
-                            '/studentScore',
-                            arguments: quiz,  // 퀴즈 코드 전달
-                          );
-                        },
+                        onPressed: () => fetchRanking(quizList[index]['code']), // 랭킹 데이터 조회 후 이동
                       ),
                       IconButton(
                         icon: Icon(Icons.delete, color: Colors.red),

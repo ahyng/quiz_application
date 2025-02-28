@@ -44,15 +44,19 @@ const quizSchema = new mongoose.Schema(
                     type : Number,
                     required : true,
                 },
+                perfectScore : {
+                    type : Boolean,
+                    required : true,
+                },
                 scoreDetails : {
                     type : [
                         {
                             number : {
                                 type : Number,
                             },
-                            isCorrect : {
-                                type : Boolean,
-                            }
+                            userAnswer : {
+                                type : String,
+                            },
                         }
                     ],
                     required : true,

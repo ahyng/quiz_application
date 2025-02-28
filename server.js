@@ -39,7 +39,7 @@ app.listen(port, () => {
 //     res.send('Hello World!');
 // })
 
-const authenticate = require('./middleware/auth');
+// const authenticate = require('./middleware/auth');
 const signUpRoutes = require('./routes/sign-up');
 const signInRoutes = require('./routes/sign-in');
 const main = require('./routes/main');
@@ -51,6 +51,8 @@ const deleteQuiz = require('./routes/delete-quiz');
 const updateQuiz = require('./routes/update-quiz');
 const authCheck = require('./routes/auth-check');
 const logOut = require('./routes/log-out');
+const ranking = require('./routes/ranking');
+const rankingDetail = require('./routes/ranking-detail');
 
 // app.use(authenticate);
 
@@ -65,3 +67,5 @@ app.use('/delete-quiz', deleteQuiz);
 app.use('/update-quiz', updateQuiz);
 app.use('/auth-check', authCheck);
 app.use('/log-out', logOut);
+app.use('/ranking', ranking);
+app.use('/ranking-detail', rankingDetail);

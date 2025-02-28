@@ -4,16 +4,19 @@ const Quiz = require('../models/quiz');
 const router = express.Router();
 
 router.post("/", async (req, res) => {
-    console.log(req.body);
+    console.log("detail page:", req.body);
+    const inputCode = req.body.code;
+    const userName = req.body.name;
 
     try {
-        const data = await Quiz.findOne({ 
-            code: inputCode, 
-            "result.name": userName
-        });
+        const data = await Quiz.findOne(
+            { code: inputCode }, 
+            { "result": { $elemMatch: { name: userName } }}
+        );
     
         console.log(data);
-        res.status(200).json({data : data.scoreDetails});
+        console.log("data:", data.result[0].scoreDetails);
+        res.status(200).json({data : data.result[0].scoreDetails});
     } catch (e) {
         console.log(e);
         res.status(500).json({message : e});

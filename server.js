@@ -53,6 +53,8 @@ const authCheck = require('./routes/auth-check');
 const logOut = require('./routes/log-out');
 const ranking = require('./routes/ranking');
 const rankingDetail = require('./routes/ranking-detail');
+const sendEmail = require('./routes/send-email');
+const changePassword = require('./routes/change-password');
 
 // app.use(authenticate);
 
@@ -69,3 +71,5 @@ app.use('/auth-check', authCheck);
 app.use('/log-out', logOut);
 app.use('/ranking', ranking);
 app.use('/ranking-detail', rankingDetail);
+app.use('/send-email', sendEmail);
+app.use('/change-password', changePassword);

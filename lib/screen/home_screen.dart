@@ -36,7 +36,7 @@ class HomeScreen extends StatelessWidget {
 
     if (response.statusCode == 200) {
       print('200 응답 → 내가 만든 퀴즈 화면으로 이동');
-      Navigator.pushNamed(context, '/manage_quiz');
+      Navigator.pushNamed(context, '/manQuiz');
     } else if (response.statusCode == 401) {
       print('401 응답 → 로그인 화면으로 이동');
       Navigator.pushNamed(context, '/login');

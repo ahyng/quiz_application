@@ -22,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (userID.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('아이디와 비밀번호를 모두 입력하세요.')),
+        SnackBar(content: Text('이메일과 비밀번호를 모두 입력하세요.')),
       );
       return;
     }
@@ -92,11 +92,22 @@ class _LoginScreenState extends State<LoginScreen> {
             SizedBox(height: 16),
             Align(
               alignment: Alignment.bottomRight,
-              child: TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/signup');
-                },
-                child: Text('회원가입'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/changepw');
+                    },
+                    child: Text('비밀번호를 잊으셨나요?'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/signup');
+                    },
+                    child: Text('회원가입'),
+                  ),
+                ],
               ),
             ),
             _isLoading

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // 클립보드 기능 추가
+import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // 추가
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ManageQuiz extends StatefulWidget {
   @override
@@ -12,7 +13,7 @@ class ManageQuiz extends StatefulWidget {
 
 class _ManageQuizScreenState extends State<ManageQuiz> {
   List<Map<String, dynamic>> quizList = [];
-  final FlutterSecureStorage storage = FlutterSecureStorage(); // 저장소 인스턴스
+  final FlutterSecureStorage storage = FlutterSecureStorage();
 
   @override
   void initState() {
@@ -20,65 +21,58 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
     fetchQuizzes();
   }
 
-Future<void> fetchQuizzes() async {
-  try {
-    String? accessToken = await storage.read(key: 'access_token'); // 토큰 가져오기
+  Future<void> fetchQuizzes() async {
+    try {
+      String? accessToken = await storage.read(key: 'access_token');
 
-    if (accessToken == null) {
-      setState(() => quizList = []);
-      print('로그인이 필요합니다.');
-      return;
-    }
-
-    var url = Uri.parse('${dotenv.env['ADDRESS']}/main'); // 실제 URL 입력
-    var response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $accessToken', // 토큰 포함
-      },
-    );
-
-    if (response.statusCode == 200) {
-      var responseData = jsonDecode(response.body);
-
-      if (responseData['success'] == true) {
-        List<Map<String, dynamic>> newQuizList = responseData['quiz'] != null
-            ? List<Map<String, dynamic>>.from(responseData['quiz'])
-            : [];
-
-        if (mounted) {
-          setState(() => quizList = newQuizList);
-        }
-
-        if (quizList.isEmpty) print('퀴즈 목록 없음');
-      } else {
-        print('서버에서 데이터를 가져오지 못했습니다.');
+      if (accessToken == null) {
+        setState(() => quizList = []);
+        print('로그인이 필요합니다.');
+        return;
       }
-    } else {
-      print('퀴즈 목록을 불러오는 데 실패했습니다: ${response.statusCode}');
+
+      var url = Uri.parse('${dotenv.env['ADDRESS']}/main');
+      var response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        var responseData = jsonDecode(response.body);
+
+        if (responseData['success'] == true) {
+          List<Map<String, dynamic>> newQuizList = responseData['quiz'] != null
+              ? List<Map<String, dynamic>>.from(responseData['quiz'])
+              : [];
+
+          if (mounted) {
+            setState(() => quizList = newQuizList);
+          }
+
+          if (quizList.isEmpty) print('퀴즈 목록 없음');
+        } else {
+          print('서버에서 데이터를 가져오지 못했습니다.');
+        }
+      } else {
+        print('퀴즈 목록을 불러오는 데 실패했습니다: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('서버 연결 실패: $e');
     }
-  } catch (e) {
-    print('서버 연결 실패: $e');
-  }
-}
-
-
-  void addQuiz(Map<String, dynamic> quiz) {
-    setState(() {
-      quizList.add(quiz);
-    });
   }
 
   void deleteQuiz(int index) async {
-    String code = quizList[index]['code']; // 삭제할 퀴즈 코드 가져오기
+    String code = quizList[index]['code'];
 
     try {
-      var url = Uri.parse('${dotenv.env['ADDRESS']}/delete-quiz'); // 백엔드 URL 확인
+      var url = Uri.parse('${dotenv.env['ADDRESS']}/delete-quiz');
       var response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'code': code}), // Body에 코드 포함
+        body: jsonEncode({'code': code}),
       );
 
       if (response.statusCode == 200) {
@@ -88,101 +82,94 @@ Future<void> fetchQuizzes() async {
         Navigator.of(context).pop();
       } else {
         print('퀴즈 삭제 실패: ${response.statusCode}');
-        print('서버 응답: ${response.body}');
       }
     } catch (e) {
       print('서버 오류: $e');
     }
   }
 
-void editQuiz(int index) async {
-  String code = quizList[index]['code']; // 수정할 퀴즈 코드 가져오기
+  void editQuiz(int index) async {
+    String code = quizList[index]['code'];
 
-  try {
-    var fetchUrl = Uri.parse('${dotenv.env['ADDRESS']}/find-quiz'); // /find-quiz
-    var fetchResponse = await http.post(
-      fetchUrl,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'code': code}), //수정할 퀴즈 코드 전송
-    );
+    try {
+      var fetchUrl = Uri.parse('${dotenv.env['ADDRESS']}/find-quiz');
+      var fetchResponse = await http.post(
+        fetchUrl,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'code': code}),
+      );
 
-    print('퀴즈 데이터 응답: ${fetchResponse.body}');
+      if (fetchResponse.statusCode == 200) {
+        var quizData = jsonDecode(fetchResponse.body);
 
-    if (fetchResponse.statusCode == 200) {
-      var quizData = jsonDecode(fetchResponse.body); // 기존 퀴즈 데이터 가져오기
-
-      Navigator.pushNamed(
-        context,
-        '/edit_quiz',
-        arguments: {
-          'title': quizData['title'],
-          'code': quizData['code'],
-          'quiz': quizData['quiz'] ?? [],
-        }, // Map 형식으로 올바르게 전달
-      ).then((updatedQuiz) async {
-        if (updatedQuiz != null) {
-          try {
-            var updateUrl = Uri.parse('${dotenv.env['ADDRESS']}/update-quiz'); // /update-quiz
-            var updateResponse = await http.post(
-              updateUrl,
-              headers: {'Content-Type': 'application/json'},
-              body: jsonEncode({'code': code, ...updatedQuiz as Map<String, dynamic>}), // 수정된 데이터 전송
-            );
-
-            print('퀴즈 수정 응답: ${updateResponse.body}');
-
-            if (updateResponse.statusCode == 200) {
-              setState(() {
-                quizList[index] = updatedQuiz as Map<String, dynamic>;
-              });
-            } else {
-              print('퀴즈 수정 실패: ${updateResponse.statusCode}');
-            }
-          } catch (e) {
-            print('서버 오류: $e');
-          }
-        }
-      });
-    } else {
-      print('퀴즈 데이터 불러오기 실패: ${fetchResponse.statusCode}');
-    }
-  } catch (e) {
-    print('서버 오류: $e');
-  }
-}
-
-Future<void> fetchRanking(String code) async {
-  try {
-    var url = Uri.parse('${dotenv.env['ADDRESS']}/ranking'); // 랭킹 조회 API
-    var response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'code': code}), // 퀴즈 코드 전송
-    );
-    print('서버 응답: ${response.body}');
-
-    if (response.statusCode == 200) {
-      var rankingData = jsonDecode(response.body);
-
-      // ✅ ranking 필드 존재 여부만 확인
-      if (rankingData.containsKey('ranking')) {
         Navigator.pushNamed(
           context,
-          '/student_score',
-          arguments: {'code': code, 'ranking': rankingData['ranking']}, // 랭킹 정보 전달
-        );
-      } else {
-        print('랭킹 데이터를 가져오지 못했습니다.');
-      }
-    } else {
-      print('랭킹 조회 실패: ${response.statusCode}');
-    }
-  } catch (e) {
-    print('서버 연결 실패: $e');
-  }
-}
+          '/edit_quiz',
+          arguments: {
+            'title': quizData['title'],
+            'code': quizData['code'],
+            'quiz': quizData['quiz'] ?? [],
+          },
+        ).then((updatedQuiz) async {
+          if (updatedQuiz != null) {
+            try {
+              var updateUrl = Uri.parse('${dotenv.env['ADDRESS']}/update-quiz');
+              var updateResponse = await http.post(
+                updateUrl,
+                headers: {'Content-Type': 'application/json'},
+                body: jsonEncode({'code': code, ...updatedQuiz as Map<String, dynamic>}),
+              );
 
-Future<void> logout(BuildContext context) async {
+              if (updateResponse.statusCode == 200) {
+                setState(() {
+                  quizList[index] = updatedQuiz as Map<String, dynamic>;
+                });
+              } else {
+                print('퀴즈 수정 실패: ${updateResponse.statusCode}');
+              }
+            } catch (e) {
+              print('서버 오류: $e');
+            }
+          }
+        });
+      } else {
+        print('퀴즈 데이터 불러오기 실패: ${fetchResponse.statusCode}');
+      }
+    } catch (e) {
+      print('서버 오류: $e');
+    }
+  }
+
+  Future<void> fetchRanking(String code) async {
+    try {
+      var url = Uri.parse('${dotenv.env['ADDRESS']}/ranking');
+      var response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'code': code}),
+      );
+
+      if (response.statusCode == 200) {
+        var rankingData = jsonDecode(response.body);
+
+        if (rankingData.containsKey('ranking')) {
+          Navigator.pushNamed(
+            context,
+            '/student_score',
+            arguments: {'code': code, 'ranking': rankingData['ranking']},
+          );
+        } else {
+          print('랭킹 데이터를 가져오지 못했습니다.');
+        }
+      } else {
+        print('랭킹 조회 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('서버 연결 실패: $e');
+    }
+  }
+
+  Future<void> logout(BuildContext context) async {
   final storage = FlutterSecureStorage();
   final dio = Dio();
 
@@ -211,7 +198,8 @@ Future<void> logout(BuildContext context) async {
   } catch (e) {
     print('로그아웃 요청 중 오류 발생: $e');
   } finally {
-    Navigator.pushReplacementNamed(context, '/login'); // 로그인 화면으로 이동 (토큰 삭제 안 함)
+    await storage.delete(key: 'access_token');
+    Navigator.pushReplacementNamed(context, '/'); // 로그인 화면으로 이동 (토큰 삭제 안 함)
   }
 }
 
@@ -247,12 +235,21 @@ Future<void> logout(BuildContext context) async {
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       IconButton(
+                        icon: Icon(Icons.content_copy),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: quiz['code']));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('퀴즈 코드가 복사되었습니다!')),
+                          );
+                        },
+                      ),
+                      IconButton(
                         icon: Icon(Icons.edit),
                         onPressed: () => editQuiz(index),
                       ),
                       IconButton(
                         icon: Icon(Icons.visibility),
-                        onPressed: () => fetchRanking(quizList[index]['code']), // 랭킹 데이터 조회 후 이동
+                        onPressed: () => fetchRanking(quizList[index]['code']),
                       ),
                       IconButton(
                         icon: Icon(Icons.delete, color: Colors.red),
@@ -293,7 +290,7 @@ Future<void> logout(BuildContext context) async {
                   final newQuiz = await Navigator.pushNamed(context, '/make_quiz');
                   if (newQuiz != null) {
                     setState(() {
-                      quizList.add(newQuiz as Map<String, dynamic>); // 바로 목록에 추가
+                      quizList.add(newQuiz as Map<String, dynamic>);
                     });
                   }
                 },
@@ -314,4 +311,3 @@ Future<void> logout(BuildContext context) async {
     );
   }
 }
-

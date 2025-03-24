@@ -8,16 +8,16 @@ const salt = 10;
 
 router.post('/', async (req, res) => {
     console.log(req.body);
-    const pwdCheck = req.body.password.length >= 8;
+    const pwdCheck = req.body.newPassword.length >= 8;
 
     if (!pwdCheck) {
         res.status(400).json({success : false, message : "pwd length"});
     } else {
-        const hashedPwd = await bcrypt.hash(req.body.password, salt);
+        const hashedPwd = await bcrypt.hash(req.body.newPassword, salt);
 
         try {
             await User.findOneAndUpdate(
-                { userId : req.body.userId }, 
+                { userId : req.body.email }, 
                 { password: hashedPwd }, 
                 { new: true } 
             );

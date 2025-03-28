@@ -55,6 +55,7 @@ const ranking = require('./routes/ranking');
 const rankingDetail = require('./routes/ranking-detail');
 const sendEmail = require('./routes/send-email');
 const changePassword = require('./routes/change-password');
+const deleteAccount = require('./routes/delete-account');
 
 // app.use(authenticate);
 
@@ -73,3 +74,4 @@ app.use('/ranking', ranking);
 app.use('/ranking-detail', rankingDetail);
 app.use('/send-email', sendEmail);
 app.use('/change-password', changePassword);
+app.use('/delete-account', deleteAccount);

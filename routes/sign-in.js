@@ -23,10 +23,10 @@ router.post('/', async (req, res) => {
                 role : "user"
             };
 
-            const accessToken = jwt.sign(payload, jwtSecretKey, {expiresIn : '1h'});
-            const refreshToken = jwt.sign(payload, jwtSecretKey, { expiresIn: '60d' });
+            const accessToken = jwt.sign(payload, jwtSecretKey, {expiresIn : '3m'});
+            const refreshToken = jwt.sign(payload, jwtSecretKey, { expiresIn: '10m' });
 
-            const expirationTime = 60 * 60 * 24 * 60; // 60일
+            const expirationTime = 10; // 60 * 60 * 24 * 60; // 60일
 
             await client.set(`refresh:${req.body.userId}`, refreshToken, 'EX', expirationTime);
               

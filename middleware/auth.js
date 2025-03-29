@@ -1,15 +1,35 @@
 const jwt = require('jsonwebtoken');
+require('dotenv').config(); 
 
 const authenticate = async (req, res, next) => {
-    const auth = req.headers.authorization;
-    const token = auth && auth.split(" ")[1];
+    const accessAuth = req.headers.accesstoken;
+    const refreshAuth = req.headers.refreshtoken;
+    const accessToken = accessAuth && accessAuth.split(" ")[1];
+    const refreshToken = refreshAuth && refreshAuth.split(" ")[1];
 
     console.log(req.headers);
-    if (token) {
-        jwt.verify(token, process.env.jWT_SECRET_KEY, (err, payload) => {
+    if (accessToken) {
+        jwt.verify(accessToken,  `${process.env.JWT_SECRET_KEY}`, async (err, payload) => {
             if (err) {
-                res.status(401).json({ message: "Invalid Token" });
-                console.log('err');
+                try {
+                    if (!refreshToken) {
+                        return res.status(401).json({message : 'no refreshToken'});
+                    }
+
+                    jwt.verify(refreshToken, `${process.env.JWT_SECRET_KEY}`, (err, user) => {
+                        if (err) {
+                            console.error("Error verifying refresh token:", err);
+                            return res.status(401).json({ message: 'Invalid refreshToken' });
+                        }
+
+                        // accessToken 발급
+                        const newAccessToken = jwt.sign({ userId: user.userId }, `${process.env.JWT_SECRET_KEY}`, { expiresIn: '2m' });
+                        return res.status(201).json({success : true, accessToken : newAccessToken});
+                    });
+                } catch(e) {
+                    console.log(e);
+                    res.status(500).json({message : e});
+                }
             } else {
                 req.user = payload;
                 console.log('req.user:', req.user);

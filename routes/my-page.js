@@ -8,7 +8,7 @@ router.post('/', authenticate, async (req, res) => {
     console.log(req.headers);
     console.log('user: ', req.user);
 
-    res.status(200).json({email : req.user.userId});
+    res.status(200).json({userId : req.user.userId});
 })
 
 module.exports = router;

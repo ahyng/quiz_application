@@ -1,14 +1,13 @@
 const express = require('express');
 const User = require('../models/user');
-const client = require('./redis-client');
+const authenticate = require('../middleware/auth');
 
 const router = express.Router();
 
-router.post('/', async (req, res) => {
-    console.log(req.body);
+router.post('/', authenticate, async (req, res) => {
+    console.log(req.header);
     try {
-        await client.del(`refresh:${req.body.userId}`);
-        const result = await User.findOneAndDelete({ userId: req.body.userId });
+        const result = await User.findOneAndDelete({ userId:  req.user.userId});
         if (result) {
             console.log("delete-account succeed");
             res.status(200).json({succeed : true});

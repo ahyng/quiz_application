@@ -22,9 +22,10 @@ const authenticate = async (req, res, next) => {
                             return res.status(401).json({ message: 'Invalid refreshToken' });
                         }
 
-                        // accessToken 발급
+                        // accessToken 발급    
                         const newAccessToken = jwt.sign({ userId: user.userId }, `${process.env.JWT_SECRET_KEY}`, { expiresIn: '2m' });
-                        return res.status(201).json({success : true, accessToken : newAccessToken});
+                        req.user = user;
+                        return res.status(201).json({accessToken : newAccessToken});
                     });
                 } catch(e) {
                     console.log(e);

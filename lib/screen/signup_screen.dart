@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -9,19 +8,96 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  final TextEditingController _IDController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
-  bool _isLoading = false;
+  final TextEditingController _verificationCodeController = TextEditingController();
+  final Dio dio = Dio();
 
+  bool _isLoading = false;
+  bool _isEmailVerified = false;
+  bool _codeSent = false;
+  String? otp;
+
+  // 이메일 인증 요청
+  Future<void> sendVerificationCode() async {
+    String email = _emailController.text.trim();
+
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('이메일을 입력하세요.')),
+      );
+      return;
+    }
+
+    try {
+      final response = await dio.post(
+        '${dotenv.env['ADDRESS']}/send-email',
+        data: {'email': email},
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _codeSent = true;
+          otp = response.data['otp'].toString();
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('인증번호가 이메일로 전송되었습니다.')),
+        );
+      }
+    } catch (e) {
+      if (e is DioException && e.response?.statusCode == 409) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('이미 존재하는 이메일입니다.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('오류 발생: $e')),
+        );
+      }
+    }
+  }
+
+  // 이메일 인증 코드 확인
+  void verifyCode() {
+    if (_verificationCodeController.text.trim() == otp) {
+      setState(() {
+        _isEmailVerified = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('이메일 인증이 완료되었습니다.')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('잘못된 인증번호입니다.')),
+      );
+    }
+  }
+
+  // 회원가입 처리
   Future<void> handleSignup() async {
-    String userID = _IDController.text.trim();
+    if (!_isEmailVerified) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('이메일 인증을 완료해주세요.')),
+      );
+      return;
+    }
+
+    String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
     String confirmPassword = _confirmPasswordController.text.trim();
 
-    if (userID.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('모든 빈칸을 입력하세요.')),
+      );
+      return;
+    }
+
+    if (password.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('비밀번호는 8자 이상이어야 합니다.')),
       );
       return;
     }
@@ -38,40 +114,27 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      final url = Uri.parse('${dotenv.env['ADDRESS']}/sign-up'); // 서버의 회원가입 API
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'userId': userID, 'password': password}),
+      final response = await dio.post(
+        '${dotenv.env['ADDRESS']}/sign-up',
+        data: {'email': email, 'password': password},
       );
 
       if (response.statusCode == 200) {
-        // 회원가입 성공
-        final responseData = jsonDecode(response.body);
-        print(responseData);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('회원가입 성공')),
         );
-
-        // 로그인 화면으로 이동
         Navigator.pushNamed(context, '/login');
-      } else {
-        // 회원가입 실패
-        final responseData = jsonDecode(response.body);
-        if (responseData['message'] == 'id exists') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('이미 등록된 아이디입니다'))
-          );
-        }else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('비밀번호는 8자 이상 작성해주세요')),
-        );
-        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('에러 발생: $e')),
-      );
+      if (e is DioException && e.response?.statusCode == 409) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('이미 존재하는 이메일입니다.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('오류 발생: $e')),
+        );
+      }
     } finally {
       setState(() {
         _isLoading = false;
@@ -89,12 +152,42 @@ class _SignupScreenState extends State<SignupScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextField(
-              controller: _IDController,
+              controller: _emailController,
               decoration: InputDecoration(
-                labelText: '아이디',
+                labelText: '이메일',
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.emailAddress,
+            ),
+            SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: sendVerificationCode,
+                    child: Text('이메일 확인'),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: _verificationCodeController,
+              decoration: InputDecoration(
+                labelText: '인증번호 입력',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: verifyCode,
+                    child: Text('인증 확인'),
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: 16),
             TextField(
@@ -120,7 +213,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 : ElevatedButton(
                     onPressed: handleSignup,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFB8E0FF),
+                      backgroundColor: _isEmailVerified ? const Color(0xFFB8E0FF) : const Color.fromARGB(255, 10, 247, 255),
                       foregroundColor: const Color(0xFF212121),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),

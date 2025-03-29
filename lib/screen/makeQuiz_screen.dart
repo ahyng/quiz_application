@@ -99,11 +99,12 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
 
   Future<void> sendQuizData() async {
     String? accessToken = await storage.read(key: 'access_token'); // 토큰 가져오기
+    String? refreshToken = await storage.read(key: 'refresh_token');
 
     var url = Uri.parse('${dotenv.env['ADDRESS']}/write'); // 백엔드 URL 입력
     var headers = {
       'Content-Type': 'application/json',
-      if (accessToken != null) 'Authorization': 'Bearer $accessToken', // 토큰 추가
+      if (accessToken != null) 'accessToken': 'Bearer $accessToken', 'refreshToken': 'Bearer $refreshToken', // 토큰 추가
     };
 
     var body = jsonEncode({

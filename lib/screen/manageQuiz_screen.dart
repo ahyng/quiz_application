@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // 클립보드 기능 추가
+import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -24,8 +24,9 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
   Future<void> fetchQuizzes() async {
     try {
       String? accessToken = await storage.read(key: 'access_token');
+      String? refreshToken = await storage.read(key: 'refresh_token');
 
-      if (accessToken == null) {
+      if (accessToken == null || refreshToken == null) {
         setState(() => quizList = []);
         print('로그인이 필요합니다.');
         return;
@@ -36,7 +37,8 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
         url,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessToken',
+          'accessToken': 'Bearer $accessToken',
+          'refreshToken': 'Bearer $refreshToken',
         },
       );
 
@@ -170,36 +172,15 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
   }
 
   Future<void> logout(BuildContext context) async {
-  final storage = FlutterSecureStorage();
-  final dio = Dio();
-
   try {
-    String? accessToken = await storage.read(key: 'access_token'); // 기존 토큰 유지
-    if (accessToken == null) {
-      Navigator.pushReplacementNamed(context, '/login'); // 로그인 화면으로 이동
-      return;
-    }
-
-    var response = await dio.post(
-      '${dotenv.env['ADDRESS']}/log-out', // 백엔드 로그아웃 API
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $accessToken', // 현재 토큰으로 로그아웃 요청
-          'Content-Type': 'application/json',
-        },
-      ),
-    );
-
-    if (response.statusCode == 200) {
-      print('로그아웃 성공');
-    } else {
-      print('로그아웃 실패: ${response.statusCode}');
-    }
-  } catch (e) {
-    print('로그아웃 요청 중 오류 발생: $e');
-  } finally {
+    // Remove tokens from secure storage
     await storage.delete(key: 'access_token');
-    Navigator.pushReplacementNamed(context, '/'); // 로그인 화면으로 이동 (토큰 삭제 안 함)
+    await storage.delete(key: 'refresh_token');
+    
+    // Navigate to the login screen
+    Navigator.pushReplacementNamed(context, '/login');
+  } catch (e) {
+    print('로그아웃 중 오류 발생: $e');
   }
 }
 

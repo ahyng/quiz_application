@@ -57,8 +57,8 @@ class _LoginScreenState extends State<LoginScreen> {
             TextField(
               controller: _IDController,
               decoration: InputDecoration(
-                labelText: '아이디',
-                hintText: '아이디를 입력하세요',
+                labelText: '이메일',
+                hintText: '이메일을 입력하세요',
                 labelStyle: TextStyle(color: Colors.black),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(10.0)),
@@ -138,7 +138,7 @@ Future<void> login(String userID, String password, BuildContext context) async {
 
   try {
     final response = await dio.post(
-      '${dotenv.env['ADDRESS']}/sign-in', //실제 API URL로 변경
+      '${dotenv.env['ADDRESS']}/sign-in',
       data: {'userId': userID, 'password': password},
       options: Options(
         headers: {'Content-Type': 'application/json'},
@@ -149,16 +149,18 @@ Future<void> login(String userID, String password, BuildContext context) async {
 
     if (response.statusCode == 200) {
       final data = response.data;
-      if (data != null && data['accessToken'] != null) {
+      if (data != null && data['accessToken'] != null && data['refreshToken'] != null) {
         final accessToken = data['accessToken'];
+        final refreshToken = data['refreshToken'];
 
         await storage.write(key: "access_token", value: accessToken);
+        await storage.write(key: "refresh_token", value: refreshToken);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('로그인 성공')),
         );
 
-        Navigator.pushReplacementNamed(context, '/manQuiz', arguments: accessToken,);
+        Navigator.pushReplacementNamed(context, '/manQuiz', arguments: {'accessToken': accessToken, 'refreshToken': refreshToken},);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('로그인 응답 오류: 액세스 토큰 없음')),

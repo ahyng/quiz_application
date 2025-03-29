@@ -15,6 +15,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   bool _codeSent = false;
   bool _isVerified = false;
+  bool _isLoading = false;
   String? otp; // 백엔드에서 받은 인증번호 저장
 
   // 인증번호 요청
@@ -28,11 +29,19 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       return;
     }
 
+    setState(() {
+      _isLoading = true; // 로딩 시작
+    });
+
     try {
       final response = await dio.post(
         '${dotenv.env['ADDRESS']}/send-email',
         data: {'email': email},
       );
+
+      setState(() {
+        _isLoading = false; // 로딩 종료
+      });
 
       if (response.statusCode == 200) {
         print(response.data['otp']);
@@ -51,6 +60,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         );
       }
     } catch (e) {
+
+      setState(() {
+        _isLoading = false; // 로딩 종료
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('오류 발생: $e')),
       );
@@ -146,7 +160,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       ),
                     ],
                   )
-                : ElevatedButton(
+                  : _isLoading
+                    ? CircularProgressIndicator() // 로딩 표시
+                  : ElevatedButton(
                     onPressed: _sendVerificationCode,
                     child: Text('인증번호 요청'),
                   ),

@@ -13,6 +13,7 @@ import 'screen/studentScore_screen.dart';
 import 'screen/eiditQuiz_scree.dart';
 import 'screen/quizResult_screen.dart';
 import 'screen/change_screen.dart';
+import 'screen/myPage_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,13 +51,14 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginScreen(),
         '/signup': (context) => SignupScreen(),
         '/enter_code': (context) => CodeScreen(),
-        '/manQuiz': (context) => ManageQuiz(), // 이 위젯이 정상적으로 존재하는지 확인
+        '/manQuiz': (context) => ManageQuiz(),
         '/make_quiz': (context) => MakeQuiz(),
         '/solve-quiz': (context) => SolveQuiz(),
         '/edit_quiz': (context) => EditQuiz(),
         '/student_score': (context) => StudentScoreScreen(),
         '/quizresult' : (context) => QuizResult(),
         '/changepw' : (context) => ChangePasswordScreen(),
+        '/mypage' : (context) => MyPageScreen(),
       },
     );
   }

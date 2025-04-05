@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   @override
@@ -12,6 +13,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final TextEditingController _codeController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
   final Dio dio = Dio();
+  static const storage = FlutterSecureStorage();
 
   bool _codeSent = false;
   bool _isVerified = false;
@@ -35,7 +37,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     try {
       final response = await dio.post(
-        '${dotenv.env['ADDRESS']}/send-email',
+        '${dotenv.env['ADDRESS']}/request-reset-pwd',
         data: {'email': email},
       );
 
@@ -72,30 +74,59 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   // 인증번호 확인 (프론트에서 직접 비교)
-  void _verifyCode() {
-    String code = _codeController.text.trim();
+  Future<void> _verifyCode() async {
+    final email = _emailController.text.trim();
+    final otp = _codeController.text.trim();
 
-    if (code.isEmpty) {
+    if (otp.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('인증번호를 입력하세요.')),
       );
       return;
     }
 
-    if (code == otp) {
-      setState(() {
-        _isVerified = true;
-      });
+    setState(() {
+      _isLoading = true;
+    });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('인증 완료! 새 비밀번호를 입력하세요.')),
+    try {
+      final response = await dio.post(
+        '${dotenv.env['ADDRESS']}/otp-check',
+        data: {
+          'email': email,
+          'otp': otp,
+        },
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('인증번호가 틀렸습니다. 다시 시도하세요.')),
-      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _isVerified = true;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('인증 완료! 새 비밀번호를 입력하세요.')),
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        print('OTP 확인 실패: ${e.response?.data}');
+        if (e.response?.statusCode == 400) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('인증번호가 유효하지 않거나 만료되었습니다. 다시 시도해주세요.')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('예상치 못한 오류: $e')),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
+
 
   // 비밀번호 변경
   Future<void> _changePassword() async {
@@ -120,7 +151,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           SnackBar(content: Text('비밀번호 변경 완료! 로그인하세요.')),
         );
 
-        Navigator.pop(context); // 로그인 화면으로 이동
+        await storage.delete(key: 'access_token');
+        await storage.delete(key: 'refresh_token');
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false); // 로그인 화면으로 이동
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('비밀번호 변경 실패: ${response.data}')),

@@ -5,6 +5,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 
 class ManageQuiz extends StatefulWidget {
   @override
@@ -14,6 +16,7 @@ class ManageQuiz extends StatefulWidget {
 class _ManageQuizScreenState extends State<ManageQuiz> {
   List<Map<String, dynamic>> quizList = [];
   final FlutterSecureStorage storage = FlutterSecureStorage();
+  String searchQuery = '';
 
   @override
   void initState() {
@@ -33,7 +36,7 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
       }
 
       var url = Uri.parse('${dotenv.env['ADDRESS']}/main');
-      var response = await http.post(
+      var response = await http.get(
         url,
         headers: {
           'Content-Type': 'application/json',
@@ -204,60 +207,84 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
       ),
       body: Column(
         children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: '퀴즈 제목으로 검색',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value.toLowerCase();
+                });
+              },
+            ),
+          ),
           Expanded(
-            child: ListView.builder(
-              itemCount: quizList.length,
-              itemBuilder: (context, index) {
-                var quiz = quizList[index];
-                return ListTile(
-                  title: Text(quiz['title'] ?? '퀴즈 ${index + 1}'),
-                  subtitle: Text('코드: ${quiz['code']}'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      IconButton(
-                        icon: Icon(Icons.content_copy),
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: quiz['code']));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('퀴즈 코드가 복사되었습니다!')),
-                          );
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.edit),
-                        onPressed: () => editQuiz(index),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.visibility),
-                        onPressed: () => fetchRanking(quizList[index]['code']),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete, color: Colors.red),
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: Text("퀴즈 삭제"),
-                                content: Text("정말 이 퀴즈를 삭제하시겠습니까?"),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).pop(),
-                                    child: Text("취소"),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => deleteQuiz(index),
-                                    child: Text("삭제", style: TextStyle(color: Colors.red)),
-                                  ),
-                                ],
+            child: Builder(
+              builder: (context) {
+                List<Map<String, dynamic>> filteredQuizList = quizList.where((quiz) {
+                  final title = (quiz['title'] ?? '').toLowerCase();
+                  return title.contains(searchQuery);
+                }).toList();
+
+                return ListView.builder(
+                  itemCount: filteredQuizList.length,
+                  itemBuilder: (context, index) {
+                    var quiz = filteredQuizList[index];
+                    return ListTile(
+                      title: Text(quiz['title'] ?? '퀴즈 ${index + 1}'),
+                      subtitle: Text('코드: ${quiz['code']}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          IconButton(
+                            icon: Icon(Icons.content_copy),
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: quiz['code']));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('퀴즈 코드가 복사되었습니다!')),
                               );
                             },
-                          );
-                        },
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.edit),
+                            onPressed: () => editQuiz(index),
+                          ),
+                          IconButton(
+                            icon: FaIcon(FontAwesomeIcons.trophy),
+                            onPressed: () => fetchRanking(quiz['code']),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: Text("퀴즈 삭제"),
+                                    content: Text("정말 이 퀴즈를 삭제하시겠습니까?"),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pop(),
+                                        child: Text("취소"),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => deleteQuiz(index),
+                                        child: Text("삭제", style: TextStyle(color: Colors.red)),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 );
               },
             ),

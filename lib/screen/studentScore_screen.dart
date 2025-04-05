@@ -11,6 +11,9 @@ class StudentScoreScreen extends StatefulWidget {
 class _StudentScoreScreenState extends State<StudentScoreScreen> {
   List<Map<String, dynamic>> _scores = [];
   String? _quizCode;
+  List<dynamic> _quizList = [];
+  List<dynamic> _userAnswers = [];
+  int _score = 0;
 
   @override
   void didChangeDependencies() {
@@ -54,52 +57,123 @@ class _StudentScoreScreenState extends State<StudentScoreScreen> {
   }
 
   void _viewQuizResult(String studentName) async {
-  if (_quizCode == null) return;
-  
-  try {
-    var url = Uri.parse('${dotenv.env['ADDRESS']}/ranking-detail');
-    var response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'code': _quizCode, 'name': studentName}),
-    );
+    if (_quizCode == null) return;
 
-    if (response.statusCode == 200) {
-      var responseData = jsonDecode(response.body);
-      print('서버 응답 본문: ${response.body}');
+    try {
+      var url = Uri.parse('${dotenv.env['ADDRESS']}/ranking-detail');
+      var response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'code': _quizCode, 'name': studentName}),
+      );
 
-      if (responseData['data'] != null && responseData['data'] is List) {
-        Navigator.pushNamed(context, '/quizresult', arguments: responseData['data']);
+      if (response.statusCode == 200) {
+        var responseData = jsonDecode(response.body);
+
+        if (responseData['data'] != null && responseData['data'] is List) {
+          final resultList = responseData['data'] as List<dynamic>;
+
+          List<Widget> resultWidgets = [];
+
+          for (int i = 0; i < resultList.length; i++) {
+            var item = resultList[i];
+            String user = item['userAnswer'] ?? '';
+            String correct = item['correctAnswer'] ?? '';
+            String question = item['question'] ?? '';
+            List<dynamic> options = item['options'] ?? [];
+            bool isCorrect = user == correct;
+
+            resultWidgets.add(
+              ListTile(
+                title: Text('Q${i + 1}. $question'),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('학생 답: $user'),
+                    Text('정답: $correct'),
+                    Text(
+                      isCorrect ? '정답 ✅' : '오답 ❌',
+                      style: TextStyle(
+                        color: isCorrect ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+            resultWidgets.add(Divider());
+          }
+
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            builder: (context) => DraggableScrollableSheet(
+              expand: false,
+              builder: (context, scrollController) => Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ListView(
+                  controller: scrollController,
+                  children: [
+                    Text(
+                      '$studentName의 퀴즈 결과',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 10),
+                    ...resultWidgets,
+                  ],
+                ),
+              ),
+            ),
+          );
+        } else {
+          throw Exception('잘못된 데이터 형식');
+        }
       } else {
-        throw Exception('잘못된 데이터 형식');
+        throw Exception('퀴즈 결과를 불러오지 못했습니다.');
       }
-    } else {
-      throw Exception('퀴즈 결과를 불러오지 못했습니다.');
+    } catch (e) {
+      print('오류 발생: $e');
     }
-  } catch (e) {
-    print('오류 발생: $e');
   }
-}
+
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('퀴즈 랭킹')),
       body: _scores.isEmpty
-          ? Center(child: CircularProgressIndicator())
+          ? Center(
+            child: Text(
+              '아직 문제를 푼 사람이 없습니다.',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          )
           : ListView.builder(
               itemCount: _scores.length,
               itemBuilder: (context, index) {
                 var student = _scores[index];
                 bool isPerfect = student['perfectScore'] ?? false;
-                int rank = index + 1;
-                if (index > 0 && _scores[index]['score'] == _scores[index - 1]['score']) {
-                  rank = index;
+
+                int rank;
+                if (index == 0) {
+                  rank = 1;
+                } else {
+                  int prevScore = _scores[index - 1]['score'];
+                  int prevRank = _scores[index - 1]['rank'];
+                  if (student['score'] == prevScore) {
+                    rank = prevRank;
+                  } else {
+                    rank = index + 1;
+                  }
                 }
+
+                _scores[index]['rank'] = rank;
 
                 return Container(
                   decoration: BoxDecoration(
-                    color: isPerfect ? Colors.lightBlue.shade100 : Colors.transparent,
+                    color: (rank == 1) ? Colors.lightBlue.shade100 : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),

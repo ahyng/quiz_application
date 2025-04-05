@@ -25,8 +25,7 @@ class _SolveQuizState extends State<SolveQuiz> {
       code = args['code'];
       _quizList = args['quizList'] ?? [];
       
-      /// ❌ 기존 코드: `_userAnswers`를 무조건 `null`로 초기화 → 값이 덮어씌워짐
-      /// ✅ 수정: `_userAnswers`가 비어 있거나 길이가 다를 때만 초기화
+      /// `_userAnswers`가 비어 있거나 길이가 다를 때만 초기화
       if (_userAnswers.isEmpty || _userAnswers.length != _quizList.length) {
         _userAnswers = List.filled(_quizList.length, null);
       }

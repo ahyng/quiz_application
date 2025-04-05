@@ -133,7 +133,7 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
                 TextButton(
                   onPressed: () {
                     Navigator.pop(context);
-                    Navigator.pushNamed(context, '/manQuiz');
+                    Navigator.pushReplacementNamed(context, '/manQuiz');
                   },
                   child: Text('확인'),
                 ),

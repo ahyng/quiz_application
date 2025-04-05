@@ -82,54 +82,60 @@ class _MyPageScreenState extends State<MyPageScreen> {
 }
 
   Future<void> _deleteAccount() async {
-  // 계정 삭제 확인 다이얼로그
-  bool? isConfirmed = await showDialog<bool>(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text('계정 삭제'),
-        content: Text('정말로 계정을 삭제하시겠습니까?'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(false);  // '아니오' 클릭 시 다이얼로그 닫기
-            },
-            child: Text('아니오'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(true);  // '예' 클릭 시 다이얼로그 닫기
-            },
-            child: Text('예'),
-          ),
-        ],
-      );
-    },
-  );
+    bool? isConfirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('계정 삭제'),
+          content: Text('정말로 계정을 삭제하시겠습니까?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('아니오'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('예'),
+            ),
+          ],
+        );
+      },
+    );
 
-  if (isConfirmed == true) {
-    // 사용자가 '예'를 클릭하면 계정 삭제를 진행
+    if (isConfirmed != true) {
+      print('계정 삭제 취소');
+      return;
+    }
+
     try {
       String? accessToken = await storage.read(key: 'access_token');
       String? refreshToken = await storage.read(key: 'refresh_token');
 
-      if (accessToken == null) return;
+      if (accessToken == null || refreshToken == null) return;
 
-      // 액세스토큰을 사용하여 인증 시도
-      var url = Uri.parse('${dotenv.env['ADDRESS']}/delete-account');
-      var response = await http.post(
-        url,
-        headers: {
-          'accessToken': 'Bearer $accessToken',
-          'refreshToken': 'Bearer $refreshToken',
-        },
-      );
+      Future<http.Response> deleteRequest(String token) async {
+        var url = Uri.parse('${dotenv.env['ADDRESS']}/delete-account');
+        return await http.post(
+          url,
+          headers: {
+            'accessToken': 'Bearer $token',
+            'refreshToken': 'Bearer $refreshToken',
+          },
+        );
+      }
 
-      // 만약 액세스토큰이 만료되었으면 /auth-check을 호출
-      if (response.statusCode == 401) {
-        // 액세스토큰이 만료되었으므로 /auth-check 호출
+      var response = await deleteRequest(accessToken);
+
+      if (response.statusCode == 200) {
+        print('계정이 삭제되었습니다.');
+        await storage.deleteAll();
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      } else if (response.statusCode == 401) {
+        print('액세스토큰 만료됨. 재인증 시도 중...');
+
+        // /auth-check 요청으로 새로운 accessToken 받아오기
         var authCheckUrl = Uri.parse('${dotenv.env['ADDRESS']}/auth-check');
-        var authCheckResponse = await http.post(
+        var authResponse = await http.post(
           authCheckUrl,
           headers: {
             'accessToken': 'Bearer $accessToken',
@@ -137,45 +143,35 @@ class _MyPageScreenState extends State<MyPageScreen> {
           },
         );
 
-        if (authCheckResponse.statusCode == 200) {
-          // /auth-check에서 인증이 성공하면 계정 삭제를 계속 진행
-          var deleteResponse = await http.post(
-            url,
-            headers: {
-              'accessToken': 'Bearer $accessToken',
-              'refreshToken': 'Bearer $refreshToken',
-            },
-          );
+        if (authResponse.statusCode == 200) {
+          var responseData = jsonDecode(authResponse.body);
+          String newAccessToken = responseData['accessToken'];
 
-          if (deleteResponse.statusCode == 200) {
+          // 저장소에 새로운 accessToken 갱신
+          await storage.write(key: 'access_token', value: newAccessToken);
+
+          // 갱신된 accessToken으로 계정 삭제 재시도
+          var retryDeleteResponse = await deleteRequest(newAccessToken);
+
+          if (retryDeleteResponse.statusCode == 200) {
             print('계정이 삭제되었습니다.');
-            await storage.delete(key: 'access_token');
-            await storage.delete(key: 'refresh_token');
+            await storage.deleteAll();
             Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
           } else {
-            print('계정 삭제 실패: ${deleteResponse.statusCode}');
+            print('계정 삭제 실패: ${retryDeleteResponse.statusCode}');
           }
         } else {
-          // 만약 /auth-check이 실패하면 로그인 화면으로 이동
-          print('액세스토큰 만료, 로그인 다시 하세요');
+          print('재인증 실패. 로그인 필요.');
           Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
         }
-      } else if (response.statusCode == 200) {
-        // 액세스토큰이 유효하면 바로 계정 삭제 진행
-        print('계정이 삭제되었습니다.');
-        await storage.delete(key: 'access_token');
-        await storage.delete(key: 'refresh_token');
-        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       } else {
         print('계정 삭제 실패: ${response.statusCode}');
       }
     } catch (e) {
       print('오류 발생: $e');
     }
-  } else {
-    print('계정 삭제 취소');
   }
-}
+
 
   @override
   Widget build(BuildContext context) {

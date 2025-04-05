@@ -17,6 +17,7 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isLoading = false;
   bool _isEmailVerified = false;
   bool _codeSent = false;
+  bool _agreedToPrivacy = false;
   String? otp;
 
   // 이메일 인증 요청
@@ -29,6 +30,10 @@ class _SignupScreenState extends State<SignupScreen> {
       );
       return;
     }
+
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       final response = await dio.post(
@@ -43,37 +48,137 @@ class _SignupScreenState extends State<SignupScreen> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('인증번호가 이메일로 전송되었습니다.')),
+          SnackBar(content: Text('인증번호가 이메일로 전송되었습니다. 인증번호는 3분동안 유효합니다.')),
+        );
+      } else {
+        // 여기도 처리해야 함
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('인증번호 전송 실패: ${response.statusCode}')),
         );
       }
     } catch (e) {
-      if (e is DioException && e.response?.statusCode == 409) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('이미 존재하는 이메일입니다.')),
-        );
+      if (e is DioException) {
+        print('오류 상태 코드: ${e.response?.statusCode}');
+        print('응답 데이터: ${e.response?.data}');
+
+        if (e.response?.statusCode == 409) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('이미 존재하는 이메일입니다.')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('오류 발생: ${e.message}')),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('오류 발생: $e')),
+          SnackBar(content: Text('예상치 못한 오류: $e')),
         );
       }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
+
   // 이메일 인증 코드 확인
-  void verifyCode() {
-    if (_verificationCodeController.text.trim() == otp) {
-      setState(() {
-        _isEmailVerified = true;
-      });
+  Future<void> verifyCode() async {
+    final email = _emailController.text.trim();
+    final otp = _verificationCodeController.text.trim();
+
+    if (otp.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('이메일 인증이 완료되었습니다.')),
+        SnackBar(content: Text('인증번호를 입력하세요.')),
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('잘못된 인증번호입니다.')),
-      );
+      return;
     }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await dio.post(
+        '${dotenv.env['ADDRESS']}/otp-check',
+        data: {
+          'email': email,
+          'otp': otp,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _isEmailVerified = true;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('이메일 인증이 완료되었습니다.')),
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        print('OTP 확인 실패: ${e.response?.data}');
+        if (e.response?.statusCode == 400) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('인증번호가 유효하지 않거나 만료되었습니다. 다시 시도해주세요.')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('예상치 못한 오류: $e')),
+        );
+      }
+    } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
   }
+
+  void showPrivacyPolicyDialog() {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('개인정보 수집 및 이용 동의서'),
+      content: SingleChildScrollView(
+        child: Text(
+          '''1. 수집하는 개인정보 항목
+          - 이메일 주소
+
+          2. 개인정보의 수집 및 이용 목적
+          - 회원 가입, 로그인, 비밀번호 재설정 등 서비스 제공을 위한 목적
+
+          3. 개인정보의 보관 및 이용 기간
+          - 회원 탈퇴 시 이메일 주소를 포함한 개인정보를 즉시 삭제합니다.
+
+          4. 개인정보 제3자 제공
+          - 개인정보를 제3자에게 제공하지 않습니다. (단, 법적 요구 사항에 따라 제공될 수 있음)
+
+          5. 개인정보 보호
+          - 이메일 주소는 안전하게 저장하며, 외부 접근으로부터 보호됩니다.
+
+          6. 동의 철회
+          - 언제든지 동의를 철회할 수 있으며, 동의를 철회한 경우 서비스 이용에 제한이 있을 수 있습니다. 
+
+          7. 사용자의 권리
+          - 사용자는 언제든지 개인정보를 조회, 수정 또는 삭제할 수 있습니다.
+
+          8. 개인정보 보호 담당자
+          - 개인정보 보호 관련 문의는 아래 연락처로 하시면 됩니다:
+            - 이메일: [담당자 이메일]''',
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('닫기'),
+                  ),
+                ],
+              ),
+            );
+          }
 
   // 회원가입 처리
   Future<void> handleSignup() async {
@@ -109,6 +214,13 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
+    if (!_agreedToPrivacy) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('개인정보 수집 및 이용에 동의해야 회원가입이 가능합니다.')),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -126,11 +238,21 @@ class _SignupScreenState extends State<SignupScreen> {
         Navigator.pushNamed(context, '/login');
       }
     } catch (e) {
-      if (e is DioException && e.response?.statusCode == 409) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('이미 존재하는 이메일입니다.')),
-        );
+      if (e is DioException) {
+        print('오류 상태 코드: ${e.response?.statusCode}');
+        print('응답 데이터: ${e.response?.data}');
+
+        if (e.response?.statusCode == 409) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('이미 존재하는 이메일입니다.')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('오류 발생: ${e.message}')),
+          );
+        }
       } else {
+        print('예상치 못한 오류: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('오류 발생: $e')),
         );
@@ -142,11 +264,13 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('회원가입')),
-      body: Padding(
+      resizeToAvoidBottomInset: true, // 키보드로 인해 뷰 크기가 줄어드는 것을 허용
+      body: SingleChildScrollView( // 스크롤 가능하게 감싸기
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -164,8 +288,17 @@ class _SignupScreenState extends State<SignupScreen> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: sendVerificationCode,
-                    child: Text('이메일 확인'),
+                    onPressed: _isLoading ? null : sendVerificationCode,
+                    child: _isLoading
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text('이메일 확인'),
                   ),
                 ),
               ],
@@ -184,7 +317,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: verifyCode,
-                    child: Text('인증 확인'),
+                    child: Text('인증번호 확인'),
                   ),
                 ),
               ],
@@ -207,6 +340,43 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               obscureText: true,
             ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Checkbox(
+                  value: _agreedToPrivacy,
+                  onChanged: (value) {
+                    setState(() {
+                      _agreedToPrivacy = value ?? false;
+                    });
+                  },
+                ),
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      style: TextStyle(color: Colors.black),
+                      children: [
+                        TextSpan(text: '개인정보 수집 내용에 동의하십니까? '),
+                        WidgetSpan(
+                          alignment: PlaceholderAlignment.middle,
+                          child: GestureDetector(
+                            onTap: showPrivacyPolicyDialog,
+                            child: Text(
+                              '(자세히 보기)',
+                              style: TextStyle(
+                                color: Colors.blue,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
             SizedBox(height: 16),
             _isLoading
                 ? CircularProgressIndicator()

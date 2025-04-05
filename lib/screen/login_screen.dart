@@ -140,9 +140,7 @@ Future<void> login(String userID, String password, BuildContext context) async {
     final response = await dio.post(
       '${dotenv.env['ADDRESS']}/sign-in',
       data: {'userId': userID, 'password': password},
-      options: Options(
-        headers: {'Content-Type': 'application/json'},
-      ),
+      options: Options(headers: {'Content-Type': 'application/json'}),
     );
 
     print("Response Data: ${response.data}");
@@ -160,25 +158,44 @@ Future<void> login(String userID, String password, BuildContext context) async {
           SnackBar(content: Text('로그인 성공')),
         );
 
-        Navigator.pushReplacementNamed(context, '/manQuiz', arguments: {'accessToken': accessToken, 'refreshToken': refreshToken},);
+        Navigator.pushReplacementNamed(
+          context,
+          '/manQuiz',
+          arguments: {
+            'accessToken': accessToken,
+            'refreshToken': refreshToken,
+          },
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('로그인 응답 오류: 액세스 토큰 없음')),
         );
       }
+    }
+  } on DioException catch (e) {
+    if (e.response != null && e.response!.data != null) {
+      final message = e.response!.data["message"];
+      if (message == "invalid pwd") {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("비밀번호를 확인해 주세요")),
+        );
+      } else if (message == "user not found") {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("이메일을 확인해 주세요")),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("오류: $message")),
+        );
+      }
     } else {
-      final responseData = response.data;
-      String message = responseData != null && responseData["message"] == "invalid pwd"
-          ? "비밀번호를 확인해 주세요"
-          : "아이디를 확인해 주세요";
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
+        SnackBar(content: Text("서버 응답이 없습니다. 네트워크 상태를 확인하세요.")),
       );
     }
   } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('로그인 요청 중 오류 발생: $e')),
+      SnackBar(content: Text('예상치 못한 오류: $e')),
     );
   }
-  }
+}

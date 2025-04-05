@@ -7,7 +7,7 @@ const router = express.Router();
 router.post('/', authenticate, async (req, res) => {
     console.log(req.header);
     try {
-        const result = await User.findOneAndDelete({ userId:  req.user.userId});
+        const result = await User.findOneAndDelete({ userId: req.user.userId});
         if (result) {
             console.log("delete-account succeed");
             res.status(200).json({succeed : true});

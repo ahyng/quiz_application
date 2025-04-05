@@ -1,14 +1,12 @@
-// const redis = require('redis');
+const { createClient } = require('redis');
 
-// const client = redis.createClient({legacyMode: true , port: 6379 });
-// client.connect();
+const redisClient = createClient(); 
 
-// client.on('connect', () => {
-//     console.log('Connected to Redis');
-// });
+redisClient.on('error', (err) => console.error('Redis Client Error', err));
 
-// client.on('error', (err) => {
-//     console.error('Redis connection error:', err);
-// });
+(async () => {
+  await redisClient.connect(); // 연결
+  console.log('Connected to Redis');
+})();
 
-// module.exports = client;
+module.exports = redisClient;

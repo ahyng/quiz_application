@@ -59,6 +59,9 @@ const quizSchema = new mongoose.Schema(
                             },
                             correctAnswer : {
                                 type : String,
+                            },
+                            correct : {
+                                type : Boolean,
                             }
                         }
                     ],

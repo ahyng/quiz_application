@@ -1,0 +1,33 @@
+// const express = require('express');
+// const authenticate = require('../middleware/auth');
+
+// const Quiz = require('../models/quiz');
+
+// const router = express.Router();
+
+// // 퀴즈 목록 가져오기
+// router.get('/', authenticate, async (req, res) => {
+
+//     console.log(req.headers);
+//     console.log('user: ', req.user);
+//     const keyword = req.query.keyword;
+//     console.log('keyword : ' , keyword);
+
+//     // const current_Id = await req.user.userId;
+
+//     try {
+//         const findData = await Quiz.find({
+//             userId : req.user.userId,
+//             "result.name": keyword,
+//         }).select('title code');
+//         if (findData) {
+//             res.status(200).json({success : true, quiz : findData});
+//         } else {
+//             res.status(401).json({success : false, detail : "quiz not found"});
+//         }
+//     } catch (e) {
+//         res.status(500).json({success : false, details : e});
+//     }
+// })
+
+// module.exports = router;

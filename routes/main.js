@@ -6,7 +6,7 @@ const Quiz = require('../models/quiz');
 const router = express.Router();
 
 // 퀴즈 목록 가져오기
-router.post('/', authenticate, async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
 
     console.log(req.headers);
     console.log('user: ', req.user);
@@ -20,7 +20,7 @@ router.post('/', authenticate, async (req, res) => {
         } else {
             res.status(401).json({success : false, detail : "quiz not found"});
         }
-        
+    
     } catch (e) {
         res.status(500).json({success : false, details : e});
     }

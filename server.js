@@ -52,10 +52,13 @@ const updateQuiz = require('./routes/update-quiz');
 // const logOut = require('./routes/log-out');
 const ranking = require('./routes/ranking');
 const rankingDetail = require('./routes/ranking-detail');
-const sendEmail = require('./routes/send-email');
+const sendEmail = require('./routes/email-check');
 const changePassword = require('./routes/change-password');
 const deleteAccount = require('./routes/delete-account');
 const authCheck = require('./routes/auth-check');
+// const searchQuiz = require('./routes/search');
+const otpCheck = require('./routes/otp-check');
+const requestResetPwd = require('./routes/request-reset-pwd');
 
 // app.use(authenticate);
 
@@ -69,10 +72,13 @@ app.use('/evaluate', evaluate);
 app.use('/delete-quiz', deleteQuiz);
 app.use('/update-quiz', updateQuiz);
 app.use('/auth-check', authCheck);
-// app.use('/log-out', logOut);
+// app.use('/log-out', logOut); -> client
 app.use('/ranking', ranking);
 app.use('/ranking-detail', rankingDetail);
 app.use('/send-email', sendEmail);
 app.use('/change-password', changePassword);
 app.use('/delete-account', deleteAccount);
 app.use('/auth-check', authCheck);
+// app.use('/search', searchQuiz); -> client
+app.use('/otp-check', otpCheck);
+app.use('/request-reset-pwd', requestResetPwd); // 비밀번호 변경시 otp 전송

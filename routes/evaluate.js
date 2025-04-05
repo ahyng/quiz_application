@@ -32,13 +32,16 @@ router.post('/', nameCheck, async (req, res) => {
     }
 
     for (let i=0; i< findQuiz.quiz.length; i++) {
+        let correct = false;
         if (findQuiz.quiz[i].answer == userAnswers[i]) {
             score += 1;
+            correct = true;
         } 
         scoreDetails.push({
             number : i,
             userAnswer : userAnswers[i],
             correctAnswer : findQuiz.quiz[i].answer,
+            correct : correct,
         });
         console.log(i);
         console.log(score);
@@ -67,6 +70,7 @@ router.post('/', nameCheck, async (req, res) => {
     );
 
 
+    console.log('detail:', scoreDetails);
     const updatedQuiz = await Quiz.findOne({ code: inputCode });
     console.log("업데이트된 퀴즈 데이터:", updatedQuiz.result);
 

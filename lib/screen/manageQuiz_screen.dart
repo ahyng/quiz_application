@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -65,7 +64,7 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
         print('퀴즈 목록을 불러오는 데 실패했습니다: ${response.statusCode}');
       }
     } catch (e) {
-      print('서버 연결 실패: $e');
+      print('서버 연결 실패: ${e.toString()}');
     }
   }
 
@@ -188,59 +187,79 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
 }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('퀴즈 관리'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () async{
-              logout(context);  // 로그아웃 함수 호출
-              Navigator.pushNamed(
-                  context,
-                  '/login',
-              );
+  @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: const Color(0xFFB8E0FF),
+    appBar: AppBar(
+      backgroundColor: const Color(0xFFB8E0FF),
+      elevation: 0,
+      title: Text(
+        '퀴즈 관리',
+        style: TextStyle(color: Colors.indigo[900], fontWeight: FontWeight.bold),
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(Icons.logout, color: Colors.indigo[900]),
+          onPressed: () async {
+            logout(context);
+            Navigator.pushNamed(context, '/login');
+          },
+        ),
+      ],
+    ),
+    body: Column(
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: '퀴즈 제목으로 검색',
+              prefixIcon: Icon(Icons.search),
+              fillColor: Colors.white,
+              filled: true,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            onChanged: (value) {
+              setState(() {
+                searchQuery = value.toLowerCase();
+              });
             },
           ),
-        ],
-      ),
-      body: Column(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: '퀴즈 제목으로 검색',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value.toLowerCase();
-                });
-              },
-            ),
-          ),
-          Expanded(
-            child: Builder(
-              builder: (context) {
-                List<Map<String, dynamic>> filteredQuizList = quizList.where((quiz) {
-                  final title = (quiz['title'] ?? '').toLowerCase();
-                  return title.contains(searchQuery);
-                }).toList();
+        ),
+        Expanded(
+          child: Builder(
+            builder: (context) {
+              List<Map<String, dynamic>> filteredQuizList = quizList.where((quiz) {
+                final title = (quiz['title'] ?? '').toLowerCase();
+                return title.contains(searchQuery);
+              }).toList();
 
-                return ListView.builder(
-                  itemCount: filteredQuizList.length,
-                  itemBuilder: (context, index) {
-                    var quiz = filteredQuizList[index];
-                    return ListTile(
-                      title: Text(quiz['title'] ?? '퀴즈 ${index + 1}'),
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: filteredQuizList.length,
+                itemBuilder: (context, index) {
+                  var quiz = filteredQuizList[index];
+                  return Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    child: ListTile(
+                      title: Text(
+                        quiz['title'] ?? '퀴즈 ${index + 1}',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       subtitle: Text('코드: ${quiz['code']}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
+                      trailing: Wrap(
+                        spacing: 4,
                         children: <Widget>[
                           IconButton(
+                            tooltip: '코드 복사',
                             icon: Icon(Icons.content_copy),
                             onPressed: () {
                               Clipboard.setData(ClipboardData(text: quiz['code']));
@@ -250,14 +269,17 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
                             },
                           ),
                           IconButton(
+                            tooltip: '퀴즈 수정',
                             icon: Icon(Icons.edit),
                             onPressed: () => editQuiz(index),
                           ),
                           IconButton(
+                            tooltip: '랭킹 보기',
                             icon: FaIcon(FontAwesomeIcons.trophy),
                             onPressed: () => fetchRanking(quiz['code']),
                           ),
                           IconButton(
+                            tooltip: '퀴즈 삭제',
                             icon: Icon(Icons.delete, color: Colors.red),
                             onPressed: () {
                               showDialog(
@@ -283,39 +305,28 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
                           ),
                         ],
                       ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton(
-                onPressed: () async {
-                  final newQuiz = await Navigator.pushNamed(context, '/make_quiz');
-                  if (newQuiz != null) {
-                    setState(() {
-                      quizList.add(newQuiz as Map<String, dynamic>);
-                    });
-                  }
+                    ),
+                  );
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB8E0FF),
-                  foregroundColor: const Color(0xFF212121),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  minimumSize: Size(60, 60),
-                ),
-                child: Text('+', style: TextStyle(fontSize: 20)),
-              ),
-            ),
+              );
+            },
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+    floatingActionButton: FloatingActionButton(
+      onPressed: () async {
+        final newQuiz = await Navigator.pushNamed(context, '/make_quiz');
+        if (newQuiz != null) {
+          setState(() {
+            quizList.add(newQuiz as Map<String, dynamic>);
+          });
+        }
+      },
+      backgroundColor: Colors.indigo[900],
+      child: Icon(Icons.add, color: Colors.white),
+      tooltip: '새 퀴즈 만들기',
+    ),
+  );
+}
 }

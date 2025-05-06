@@ -21,7 +21,6 @@ class HomeScreen extends StatelessWidget {
         print('가져온 토큰: $accessToken');
       }
 
-      // 백엔드 API URL (실제 값으로 변경해야 함!)
       var url = Uri.parse('${dotenv.env['ADDRESS']}/auth-check');
 
       print('백엔드 요청 시작: $url');
@@ -49,7 +48,7 @@ class HomeScreen extends StatelessWidget {
         print('201 응답 → 새 액세스 토큰 저장: $accessToken');
         
         // 갱신된 토큰으로 다시 백엔드에 요청 보내기
-        var newResponse = await http.post(
+        var newResponse = await http.get(
           url,
           headers: {
             'Content-Type': 'application/json',
@@ -79,53 +78,87 @@ class HomeScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('퀴즈 앱'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.person),
-            onPressed: () {
-              Navigator.pushNamed(context, '/mypage');
-            },
-          ),
-        ],
+  @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: const Color(0xFFB8E0FF), // 전체 배경 색상 통일
+    appBar: AppBar(
+      backgroundColor: const Color(0xFFB8E0FF),
+      elevation: 0,
+      centerTitle: true,
+      title: Text(
+        'QUIZ FACTORY',
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Colors.indigo[900],
+        ),
       ),
-      body: Center(
+      actions: [
+        IconButton(
+          icon: Icon(Icons.person, color: Colors.indigo[900]),
+          onPressed: () {
+            Navigator.pushNamed(context, '/mypage');
+          },
+        ),
+      ],
+    ),
+    body: Center(
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(32),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 12,
+              offset: Offset(0, 6),
+            ),
+          ],
+        ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
+            Icon(Icons.settings, size: 48, color: Colors.indigo[900]),
+            SizedBox(height: 16),
+            Text(
+              '퀴즈를 시작해볼까요?',
+              style: TextStyle(fontSize: 18, color: Colors.indigo[900]),
+            ),
+            SizedBox(height: 32),
             ElevatedButton(
-              onPressed: () => checkAccessToken(context), // 버튼 클릭 시 토큰 확인 후 이동
+              onPressed: () => checkAccessToken(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFB8E0FF),
-                foregroundColor: const Color(0xFF212121),
+                foregroundColor: Colors.indigo[900],
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
                 minimumSize: Size(200, 50),
               ),
-              child: Text('내가 만든 퀴즈', style: TextStyle(fontSize: 20)),
+              child: Text('내가 만든 퀴즈', style: TextStyle(fontSize: 18)),
             ),
-            SizedBox(height: 50),
+            SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 Navigator.pushNamed(context, '/enter_code');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFB8E0FF),
-                foregroundColor: const Color(0xFF212121),
+                foregroundColor: Colors.indigo[900],
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
                 minimumSize: Size(200, 50),
               ),
-              child: Text('코드 입력', style: TextStyle(fontSize: 20)),
+              child: Text('코드 입력', style: TextStyle(fontSize: 18)),
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

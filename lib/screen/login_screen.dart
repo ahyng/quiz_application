@@ -46,90 +46,118 @@ class _LoginScreenState extends State<LoginScreen> {
   
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('로그인 화면')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _IDController,
-              decoration: InputDecoration(
-                labelText: '이메일',
-                hintText: '이메일을 입력하세요',
-                labelStyle: TextStyle(color: Colors.black),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                  borderSide: BorderSide(width: 1, color: Colors.black),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                  borderSide: BorderSide(width: 1, color: Colors.black),
-                ),
-              ),
-              keyboardType: TextInputType.emailAddress,
+  @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: const Color(0xFFB8E0FF),
+    appBar: AppBar(
+      backgroundColor: const Color(0xFFB8E0FF),
+      elevation: 0,
+      centerTitle: true,
+      title: Text(
+        '로그인',
+        style: TextStyle(
+          color: Colors.indigo[900],
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+    body: Center(
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(32),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 10,
+              offset: Offset(0, 5),
             ),
-            SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: '비밀번호',
-                hintText: '비밀번호를 입력하세요',
-                labelStyle: TextStyle(color: Colors.black),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                  borderSide: BorderSide(width: 1, color: Colors.black),
+          ],
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _IDController,
+                decoration: InputDecoration(
+                  labelText: '이메일',
+                  hintText: '이메일을 입력하세요',
+                  labelStyle: TextStyle(color: Colors.indigo[900]),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(width: 1, color: Colors.indigo),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(width: 1, color: Colors.grey),
+                  ),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                  borderSide: BorderSide(width: 1, color: Colors.black),
-                ),
+                keyboardType: TextInputType.emailAddress,
               ),
-              obscureText: true,
-            ),
-            SizedBox(height: 16),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              SizedBox(height: 16),
+              TextField(
+                controller: _passwordController,
+                decoration: InputDecoration(
+                  labelText: '비밀번호',
+                  hintText: '비밀번호를 입력하세요',
+                  labelStyle: TextStyle(color: Colors.indigo[900]),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(width: 1, color: Colors.indigo),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(width: 1, color: Colors.grey),
+                  ),
+                ),
+                obscureText: true,
+              ),
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   TextButton(
                     onPressed: () {
                       Navigator.pushNamed(context, '/changepw');
                     },
-                    child: Text('비밀번호를 잊으셨나요?'),
+                    child: Text('비밀번호 찾기', style: TextStyle(color: Colors.indigo[900])),
                   ),
                   TextButton(
                     onPressed: () {
                       Navigator.pushNamed(context, '/signup');
                     },
-                    child: Text('회원가입'),
+                    child: Text('회원가입', style: TextStyle(color: Colors.indigo[900])),
                   ),
                 ],
               ),
-            ),
-            _isLoading
-                ? CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _handleLogin,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFB8E0FF),
-                      foregroundColor: const Color(0xFF212121),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+              SizedBox(height: 16),
+              _isLoading
+                  ? CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _handleLogin,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFB8E0FF),
+                        foregroundColor: Colors.indigo[900],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        minimumSize: Size(200, 50),
                       ),
-                      minimumSize: Size(200, 50),
+                      child: Text('로그인', style: TextStyle(fontSize: 20)),
                     ),
-                    child: Text('로그인', style: TextStyle(fontSize: 20)),
-                  ),
-          ],
+            ],
+          ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
+
 
 // 로그인 함수 Dio 사용
 Future<void> login(String userID, String password, BuildContext context) async {
@@ -198,4 +226,5 @@ Future<void> login(String userID, String password, BuildContext context) async {
       SnackBar(content: Text('예상치 못한 오류: $e')),
     );
   }
+}
 }

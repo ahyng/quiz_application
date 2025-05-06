@@ -8,13 +8,13 @@ const router = express.Router();
 // 퀴즈 목록 가져오기
 router.get('/', authenticate, async (req, res) => {
 
-    console.log(req.headers);
-    console.log('user: ', req.user);
-
-    // const current_Id = await req.user.userId;
+    console.log('메인 화면입니다.');
 
     try {
+        
         const findData = await Quiz.find({userId : req.user.userId}).select('title code');
+        console.log('퀴즈 찾기');
+        console.log('find:', findData);
         if (findData) {
             res.status(200).json({success : true, quiz : findData});
         } else {

@@ -29,9 +29,10 @@ const authenticate = async (req, res, next) => {
                     });
                 } catch(e) {
                     console.log(e);
-                    res.status(500).json({message : e});
+                    return res.status(500).json({message : e});
                 }
             } else {
+                console.log('auth: succeed');
                 req.user = payload;
                 console.log('req.user:', req.user);
                 next();

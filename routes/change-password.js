@@ -17,7 +17,7 @@ router.post('/', async (req, res) => {
 
         try {
             await User.findOneAndUpdate(
-                { userId : req.body.email }, 
+                { email : req.body.email }, 
                 { password: hashedPwd }, 
                 { new: true } 
             );

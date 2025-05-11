@@ -10,11 +10,12 @@ const jwtSecretKey = process.env.JWT_SECRET_KEY;
 // 로그인
 router.post('/', async (req, res) => {
     console.log(req.body);
-    const loginPwd = req.body.password;
+    const loginPwd = req.body.password.trim();
     const user = await User.findOne({userId : req.body.userId});
     console.log(user);
 
     if (user) {
+        console.log("Comparing", loginPwd, "vs", user.password);
         const checkPwd = await bcrypt.compare(loginPwd, user.password);
         if (checkPwd) {
             const payload = {
@@ -23,7 +24,7 @@ router.post('/', async (req, res) => {
             };
 
             const accessToken = jwt.sign(payload, jwtSecretKey, {expiresIn : '1m'});
-            const refreshToken = jwt.sign(payload, jwtSecretKey, { expiresIn: '5m' });
+            const refreshToken = jwt.sign(payload, jwtSecretKey, { expiresIn: '10m' });
 
             console.log('succeed');
             res.status(200).json({success : true, accessToken : accessToken, refreshToken : refreshToken});

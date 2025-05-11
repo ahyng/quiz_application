@@ -13,11 +13,11 @@ router.post('/', async (req, res) => {
     if (!pwdCheck) {
         res.status(400).json({success : false, message : "pwd length"});
     } else {
-        const hashedPwd = await bcrypt.hash(req.body.newPassword, salt);
+        const hashedPwd = await bcrypt.hash(req.body.newPassword.trim(), salt);
 
         try {
             await User.findOneAndUpdate(
-                { email : req.body.email }, 
+                { userId : req.body.email.trim() }, 
                 { password: hashedPwd }, 
                 { new: true } 
             );

@@ -9,7 +9,7 @@ const authenticate = async (req, res, next) => {
 
     console.log(req.headers);
     if (accessToken) {
-        jwt.verify(accessToken,  `${process.env.JWT_SECRET_KEY}`, async (err, payload) => {
+        jwt.verify(accessToken, `${process.env.JWT_SECRET_KEY}`, async (err, payload) => {
             if (err) {
                 try {
                     if (!refreshToken) {

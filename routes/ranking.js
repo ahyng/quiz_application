@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.post("/", async (req, res) => {
     console.log(req.body);
+    console.log(req.body.code);
 
     const quiz = await Quiz.findOne({ code: req.body.code });
 

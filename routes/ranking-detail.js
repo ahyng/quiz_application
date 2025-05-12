@@ -1,6 +1,5 @@
 const express = require('express');
 const Quiz = require('../models/quiz');
-
 const router = express.Router();
 
 router.post("/", async (req, res) => {

@@ -51,6 +51,12 @@ Widget build(BuildContext context) {
   return Scaffold(
     backgroundColor: const Color(0xFFB8E0FF),
     appBar: AppBar(
+      leading: IconButton(
+          icon: Icon(Icons.home, color: Colors.indigo[900]),
+          onPressed: () {
+            Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+          },
+        ),
       backgroundColor: const Color(0xFFB8E0FF),
       elevation: 0,
       centerTitle: true,

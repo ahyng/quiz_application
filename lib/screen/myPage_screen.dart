@@ -51,7 +51,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
   } else {
     // 액세스 토큰이 유효하지 않으면 /auth-check API 호출
     try {
-      var url = Uri.parse('${dotenv.env['ADDRESS']}/auth-check');
+      var url = Uri.parse('${dotenv.env['ADDRESS']}/my-page');
       var response = await http.post(
         url,
         headers: {
@@ -134,7 +134,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
         print('액세스토큰 만료됨. 재인증 시도 중...');
 
         // /auth-check 요청으로 새로운 accessToken 받아오기
-        var authCheckUrl = Uri.parse('${dotenv.env['ADDRESS']}/auth-check');
+        var authCheckUrl = Uri.parse('${dotenv.env['ADDRESS']}/delete-account');
         var authResponse = await http.post(
           authCheckUrl,
           headers: {
@@ -172,50 +172,117 @@ class _MyPageScreenState extends State<MyPageScreen> {
     }
   }
 
+  Future<void> logout(BuildContext context) async {
+    try {
+      // Remove tokens from secure storage
+      await storage.delete(key: 'access_token');
+      await storage.delete(key: 'refresh_token');
+      
+      // Navigate to the login screen
+      Navigator.pushReplacementNamed(context, '/login');
+    } catch (e) {
+      print('로그아웃 중 오류 발생: $e');
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
+    Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('마이페이지')),
+      backgroundColor: const Color(0xFFB8E0FF),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.home, color: Colors.indigo[900]),
+          onPressed: () {
+            Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+          },
+        ),
+        backgroundColor: const Color(0xFFB8E0FF),
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          '마이페이지',
+          style: TextStyle(
+            color: Colors.indigo[900],
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
       body: Center(
         child: isLoggedIn
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.person, size: 100, color: const Color.fromARGB(255, 72, 139, 255)),
-                  SizedBox(height: 10),
-                  Text('$userId', style: TextStyle(fontSize: 20)),
-                  SizedBox(height: 30),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/changepw');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 154, 209, 255),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      minimumSize: Size(200, 50),
+            ? Container(
+                padding: EdgeInsets.all(24),
+                margin: EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
                     ),
-                    child: Text('비밀번호 변경', style: TextStyle(fontSize: 18)),
-                  ),
-                  SizedBox(height: 10),
-                  ElevatedButton(
-                    onPressed: _deleteAccount,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      minimumSize: Size(200, 50),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.person, size: 100, color: Colors.indigo[400]),
+                    SizedBox(height: 10),
+                    Text(
+                      '$userId',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
                     ),
-                    child: Text('계정 삭제', style: TextStyle(fontSize: 18)),
-                  ),
-                ],
+                    SizedBox(height: 30),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/changepw');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.indigo[400],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        minimumSize: Size(200, 50),
+                        textStyle: TextStyle(fontSize: 18),
+                      ),
+                      child: Text('비밀번호 변경'),
+                    ),
+                    SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: _deleteAccount,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red[400],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        minimumSize: Size(200, 50),
+                        textStyle: TextStyle(fontSize: 18),
+                      ),
+                      child: Text('계정 삭제'),
+                    ),
+                    SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () => logout(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[600],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        minimumSize: Size(200, 50),
+                        textStyle: TextStyle(fontSize: 18),
+                      ),
+                      child: Text('로그아웃'),
+                    ),
+                  ],
+                ),
               )
-            : Text('로그인이 필요합니다.', style: TextStyle(fontSize: 20)),
+            : Text(
+                '로그인이 필요합니다.',
+                style: TextStyle(fontSize: 20, color: Colors.grey[800]),
+              ),
       ),
     );
   }

@@ -69,81 +69,86 @@ class _CodeScreenState extends State<CodeScreen> {
   }
 
   @override
-  @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: const Color(0xFFB8E0FF),
-    appBar: AppBar(
+  Widget build(BuildContext context) {
+    return Scaffold(
       backgroundColor: const Color(0xFFB8E0FF),
-      elevation: 0,
-      title: Text(
-        '퀴즈 코드 입력',
-        style: TextStyle(color: Colors.indigo[900]),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.home, color: Colors.indigo[900]),
+          onPressed: () {
+            Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+          },
+        ),
+        backgroundColor: const Color(0xFFB8E0FF),
+        elevation: 0,
+        title: Text(
+          '퀴즈 코드 입력',
+          style: TextStyle(color: Colors.indigo[900]),
+        ),
+        centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.indigo[900]),
       ),
-      centerTitle: true,
-      iconTheme: IconThemeData(color: Colors.indigo[900]),
-    ),
-    body: Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '퀴즈 코드를 입력하세요',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.indigo[900],
-              ),
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _codeController,
-              decoration: InputDecoration(
-                hintText: '예: ABC123',
-                labelText: '퀴즈 코드',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16.0),
-                  borderSide: BorderSide.none,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '퀴즈 코드를 입력하세요',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.indigo[900],
                 ),
               ),
-              keyboardType: TextInputType.text,
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _handleCode,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo[900],
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+              const SizedBox(height: 24),
+              TextField(
+                controller: _codeController,
+                decoration: InputDecoration(
+                  hintText: '예: ABC123',
+                  labelText: '퀴즈 코드',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.0),
+                    borderSide: BorderSide.none,
                   ),
                 ),
-                child: _isLoading
-                    ? SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 3,
-                        ),
-                      )
-                    : Text(
-                        '확인',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
+                keyboardType: TextInputType.text,
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleCode,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.indigo[900],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        )
+                      : Text(
+                          '확인',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

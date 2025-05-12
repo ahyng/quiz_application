@@ -137,19 +137,30 @@ class _StudentScoreScreenState extends State<StudentScoreScreen> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('퀴즈 랭킹')),
+      backgroundColor: const Color(0xFFB8E0FF),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFB8E0FF),
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          '퀴즈 랭킹',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.indigo[900],
+          ),
+        ),
+      ),
       body: _scores.isEmpty
           ? Center(
-            child: Text(
-              '아직 문제를 푼 사람이 없습니다.',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          )
+              child: Text(
+                '아직 문제를 푼 사람이 없습니다.',
+                style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+              ),
+            )
           : ListView.builder(
               itemCount: _scores.length,
               itemBuilder: (context, index) {
@@ -172,20 +183,49 @@ class _StudentScoreScreenState extends State<StudentScoreScreen> {
                 _scores[index]['rank'] = rank;
 
                 return Container(
+                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: (rank == 1) ? Colors.lightBlue.shade100 : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
+                    color: (rank == 1)
+                        ? Colors.lightBlue.shade100
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 6,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
                   ),
-                  margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                  padding: EdgeInsets.symmetric(vertical: 8),
                   child: ListTile(
-                    leading: Text('$rank위'),
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 20,
+                    ),
+                    leading: Text(
+                      '$rank위',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.indigo[800],
+                      ),
+                    ),
                     title: Text(
                       student['name'] ?? '이름 없음',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     ),
-                    subtitle: Text('점수: ${student['score']}점'),
+                    subtitle: Text(
+                      '점수: ${student['score']}점',
+                      style: TextStyle(fontSize: 16),
+                    ),
                     trailing: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.indigo[400],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                       onPressed: () => _viewQuizResult(student['name']),
                       child: Text('결과 보기'),
                     ),
@@ -196,3 +236,4 @@ class _StudentScoreScreenState extends State<StudentScoreScreen> {
     );
   }
 }
+

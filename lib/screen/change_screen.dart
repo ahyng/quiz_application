@@ -167,79 +167,78 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   @override
-  @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: const Color(0xFFB8E0FF),
-    appBar: AppBar(
-      title: Text(
-        '비밀번호 찾기',
-        style: TextStyle(color: Colors.indigo[900]),
-      ),
+  Widget build(BuildContext context) {
+    return Scaffold(
       backgroundColor: const Color(0xFFB8E0FF),
-      elevation: 0,
-      iconTheme: IconThemeData(color: Colors.indigo[900]),
-    ),
-    body: SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          _buildTextField(_emailController, '이메일'),
-          const SizedBox(height: 16),
-          if (_codeSent) ...[
-            _buildTextField(_codeController, '인증번호'),
-            const SizedBox(height: 16),
-            _buildMainButton('인증번호 확인', _verifyCode),
-          ] else if (_isLoading) ...[
-            const SizedBox(height: 32),
-            Center(child: CircularProgressIndicator()),
-          ] else ...[
-            _buildMainButton('인증번호 요청', _sendVerificationCode),
-          ],
-          const SizedBox(height: 16),
-          if (_isVerified) ...[
-            _buildTextField(_newPasswordController, '새 비밀번호', obscureText: true),
-            const SizedBox(height: 16),
-            _buildMainButton('비밀번호 변경', _changePassword),
-          ],
-        ],
+      appBar: AppBar(
+        title: Text(
+          '비밀번호 찾기',
+          style: TextStyle(color: Colors.indigo[900]),
+        ),
+        backgroundColor: const Color(0xFFB8E0FF),
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.indigo[900]),
       ),
-    ),
-  );
-}
-
-Widget _buildTextField(TextEditingController controller, String label,
-    {bool obscureText = false}) {
-  return TextField(
-    controller: controller,
-    obscureText: obscureText,
-    decoration: InputDecoration(
-      labelText: label,
-      filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
-      ),
-    ),
-  );
-}
-
-Widget _buildMainButton(String text, VoidCallback onPressed) {
-  return SizedBox(
-    width: double.infinity,
-    child: ElevatedButton(
-      onPressed: onPressed,
-      child: Text(text, style: TextStyle(fontSize: 16)),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.indigo[900],
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            _buildTextField(_emailController, '이메일'),
+            const SizedBox(height: 16),
+            if (_codeSent) ...[
+              _buildTextField(_codeController, '인증번호'),
+              const SizedBox(height: 16),
+              _buildMainButton('인증번호 확인', _verifyCode),
+            ] else if (_isLoading) ...[
+              const SizedBox(height: 32),
+              Center(child: CircularProgressIndicator()),
+            ] else ...[
+              _buildMainButton('인증번호 요청', _sendVerificationCode),
+            ],
+            const SizedBox(height: 16),
+            if (_isVerified) ...[
+              _buildTextField(_newPasswordController, '새 비밀번호', obscureText: true),
+              const SizedBox(height: 16),
+              _buildMainButton('비밀번호 변경', _changePassword),
+            ],
+          ],
         ),
       ),
-    ),
-  );
-}
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label,
+      {bool obscureText = false}) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainButton(String text, VoidCallback onPressed) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        child: Text(text, style: TextStyle(fontSize: 16)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.indigo[900],
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+    );
+  }
 }

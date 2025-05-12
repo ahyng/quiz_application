@@ -267,133 +267,176 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('회원가입')),
-      resizeToAvoidBottomInset: true, // 키보드로 인해 뷰 크기가 줄어드는 것을 허용
-      body: SingleChildScrollView( // 스크롤 가능하게 감싸기
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: '이메일',
-                border: OutlineInputBorder(),
+  return Scaffold(
+    backgroundColor: const Color(0xFFB8E0FF),
+    appBar: AppBar(
+      backgroundColor: const Color(0xFFB8E0FF),
+      elevation: 0,
+      centerTitle: true,
+      title: Text(
+        '회원가입',
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Colors.indigo[900],
+        ),
+      ),
+    ),
+    resizeToAvoidBottomInset: true,
+    body: SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 12,
+                offset: Offset(0, 6),
               ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : sendVerificationCode,
-                    child: _isLoading
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Text('이메일 확인'),
+            ],
+          ),
+          child: Column(
+            children: [
+              TextField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: '이메일',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : sendVerificationCode,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB8E0FF),
+                    foregroundColor: Colors.indigo[900],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
+                  child: _isLoading
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text('이메일 확인', style: TextStyle(fontSize: 16)),
                 ),
-              ],
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: _verificationCodeController,
-              decoration: InputDecoration(
-                labelText: '인증번호 입력',
-                border: OutlineInputBorder(),
               ),
-            ),
-            SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: verifyCode,
-                    child: Text('인증번호 확인'),
+              SizedBox(height: 10),
+              TextField(
+                controller: _verificationCodeController,
+                decoration: InputDecoration(
+                  labelText: '인증번호 입력',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: verifyCode,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB8E0FF),
+                    foregroundColor: Colors.indigo[900],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
+                  child: Text('인증번호 확인', style: TextStyle(fontSize: 16)),
                 ),
-              ],
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: '비밀번호',
-                border: OutlineInputBorder(),
               ),
-              obscureText: true,
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: _confirmPasswordController,
-              decoration: InputDecoration(
-                labelText: '비밀번호 확인',
-                border: OutlineInputBorder(),
-              ),
-              obscureText: true,
-            ),
-            SizedBox(height: 16),
-            Row(
-              children: [
-                Checkbox(
-                  value: _agreedToPrivacy,
-                  onChanged: (value) {
-                    setState(() {
-                      _agreedToPrivacy = value ?? false;
-                    });
-                  },
+              SizedBox(height: 16),
+              TextField(
+                controller: _passwordController,
+                decoration: InputDecoration(
+                  labelText: '비밀번호',
+                  border: OutlineInputBorder(),
                 ),
-                Expanded(
-                  child: RichText(
-                    text: TextSpan(
-                      style: TextStyle(color: Colors.black),
-                      children: [
-                        TextSpan(text: '개인정보 수집 내용에 동의하십니까? '),
-                        WidgetSpan(
-                          alignment: PlaceholderAlignment.middle,
-                          child: GestureDetector(
-                            onTap: showPrivacyPolicyDialog,
-                            child: Text(
-                              '(자세히 보기)',
-                              style: TextStyle(
-                                color: Colors.blue,
-                                decoration: TextDecoration.underline,
+                obscureText: true,
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: _confirmPasswordController,
+                decoration: InputDecoration(
+                  labelText: '비밀번호 확인',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+              ),
+              SizedBox(height: 16),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _agreedToPrivacy,
+                    onChanged: (value) {
+                      setState(() {
+                        _agreedToPrivacy = value ?? false;
+                      });
+                    },
+                  ),
+                  Expanded(
+                    child: RichText(
+                      text: TextSpan(
+                        style: TextStyle(color: Colors.black),
+                        children: [
+                          TextSpan(text: '개인정보 수집 내용에 동의하십니까? '),
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: GestureDetector(
+                              onTap: showPrivacyPolicyDialog,
+                              child: Text(
+                                '(자세히 보기)',
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                  decoration: TextDecoration.underline,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 16),
-            _isLoading
-                ? CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: handleSignup,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _isEmailVerified ? const Color(0xFFB8E0FF) : const Color.fromARGB(255, 10, 247, 255),
-                      foregroundColor: const Color(0xFF212121),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        ],
                       ),
                     ),
-                    child: Text('회원가입'),
                   ),
-          ],
+                ],
+              ),
+              SizedBox(height: 16),
+              _isLoading
+                  ? CircularProgressIndicator()
+                  : SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: handleSignup,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isEmailVerified
+                              ? const Color(0xFFB8E0FF)
+                              : Colors.grey.shade300,
+                          foregroundColor: Colors.indigo[900],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: Text('회원가입', style: TextStyle(fontSize: 16)),
+                      ),
+                    ),
+            ],
+          ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

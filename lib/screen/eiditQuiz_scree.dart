@@ -141,79 +141,149 @@ class _EditQuizScreenState extends State<EditQuiz> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFB8E0FF),
       appBar: AppBar(
-        title: Text('퀴즈 수정하기'),
+        backgroundColor: const Color(0xFFB8E0FF),
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'QUIZ FACTORY',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.indigo[900],
+          ),
+        ),
         actions: [
           IconButton(
-            icon: Icon(Icons.check),
+            icon: Icon(Icons.check, color: Colors.indigo[900]),
             onPressed: () {
-              saveCurrentQuestion(); //마지막 문제 저장
+              saveCurrentQuestion();
               sendQuizData();
             },
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '문제 $questionNumber',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: questionController,
-              decoration: InputDecoration(
-                labelText: '문제 입력',
-                border: OutlineInputBorder(),
+      body: Center(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          margin: const EdgeInsets.symmetric(horizontal: 24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 12,
+                offset: Offset(0, 6),
               ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: answerController,
-              decoration: InputDecoration(
-                labelText: '정답 입력',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 16),
-            if (questionType == '객관식') ...[
-              for (int i = 0; i < 5; i++)
+            ],
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.edit, color: Colors.indigo[900], size: 32),
+                    SizedBox(width: 8),
+                    Text(
+                      '문제 $questionNumber 수정',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.indigo[900],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
                 TextField(
-                  controller: optionControllers[i],
+                  controller: questionController,
                   decoration: InputDecoration(
-                    labelText: '선택지 ${i + 1}',
-                    border: OutlineInputBorder(),
+                    labelText: '문제 입력',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
-            ],
-            SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.arrow_back),
-                  onPressed: currentIndex > 0
-                      ? () {
-                          saveCurrentQuestion();
-                          loadQuestion(currentIndex - 1);
-                        }
-                      : null,
+                SizedBox(height: 16),
+                TextField(
+                  controller: answerController,
+                  decoration: InputDecoration(
+                    labelText: '정답 입력',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.arrow_forward),
-                  onPressed: currentIndex < quizList.length - 1
-                      ? () {
-                          saveCurrentQuestion();
-                          loadQuestion(currentIndex + 1);
-                        }
-                      : null,
+                if (questionType == '객관식') ...[
+                  SizedBox(height: 16),
+                  for (int i = 0; i < 5; i++) ...[
+                    TextField(
+                      controller: optionControllers[i],
+                      decoration: InputDecoration(
+                        labelText: '선택지 ${i + 1}',
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                  ],
+                ],
+                SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: currentIndex > 0
+                          ? () {
+                              saveCurrentQuestion();
+                              loadQuestion(currentIndex - 1);
+                            }
+                          : null,
+                      icon: Icon(Icons.arrow_back),
+                      label: Text('이전'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFB8E0FF),
+                        foregroundColor: Colors.indigo[900],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        minimumSize: Size(120, 48),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: currentIndex < quizList.length - 1
+                          ? () {
+                              saveCurrentQuestion();
+                              loadQuestion(currentIndex + 1);
+                            }
+                          : null,
+                      icon: Icon(Icons.arrow_forward),
+                      label: Text('다음'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFB8E0FF),
+                        foregroundColor: Colors.indigo[900],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        minimumSize: Size(120, 48),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

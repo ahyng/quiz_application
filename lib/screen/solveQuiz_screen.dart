@@ -139,8 +139,32 @@ class _SolveQuizState extends State<SolveQuiz> {
   Widget build(BuildContext context) {
     if (_quizList.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text('퀴즈 풀기')),
-        body: Center(child: Text("퀴즈가 없습니다.")),
+        backgroundColor: const Color(0xFFB8E0FF),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(Icons.home, color: Colors.indigo[900]),
+            onPressed: () {
+              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+            },
+          ),
+          backgroundColor: const Color(0xFFB8E0FF),
+          elevation: 0,
+          centerTitle: true,
+          title: Text(
+            '퀴즈 풀기',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.indigo[900],
+            ),
+          ),
+        ),
+        body: Center(
+          child: Text(
+            "퀴즈가 없습니다.",
+            style: TextStyle(fontSize: 18, color: Colors.black54),
+          ),
+        ),
       );
     }
 
@@ -150,103 +174,171 @@ class _SolveQuizState extends State<SolveQuiz> {
     bool isMultipleChoice = currentQuestion['isMultipleChoice'] ?? false;
 
     return Scaffold(
-      appBar: AppBar(title: Text('퀴즈 풀기')),
+      backgroundColor: const Color(0xFFB8E0FF),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFB8E0FF),
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          '퀴즈 풀기',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.indigo[900],
+          ),
+        ),
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '문제 ${_currentQuestionIndex + 1}/${_quizList.length}',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16),
-            Text(
-              questionText,
-              style: TextStyle(fontSize: 20),
-            ),
-            SizedBox(height: 16),
-            
-            if (!isMultipleChoice)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _userAnswers[_currentQuestionIndex] = 'O';
-                      });
-                      print('Updated Answers: $_userAnswers');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _userAnswers[_currentQuestionIndex] == 'O' ? const Color.fromARGB(255, 136, 180, 255) : const Color.fromARGB(255, 255, 255, 255),
-                    ),
-                    child: Text('O'),
-                  ),
-                  SizedBox(width: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _userAnswers[_currentQuestionIndex] = 'X';
-                      });
-                      print('Updated Answers: $_userAnswers');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _userAnswers[_currentQuestionIndex] == 'X' ? const Color.fromARGB(255, 136, 180, 255) : const Color.fromARGB(255, 255, 255, 255),
-                    ),
-                    child: Text('X'),
-                  ),
-                ],
-              )
-            else
-              Column(
-                children: options.asMap().entries.map((entry) {
-                  int idx = entry.key;
-                  String option = entry.value;
-                  return RadioListTile<String>(
-                    title: Text(option),
-                    value: (idx + 1).toString(), // 1부터 시작
-                    groupValue: _userAnswers[_currentQuestionIndex],
-                    onChanged: (value) {
-                      setState(() {
-                        _userAnswers[_currentQuestionIndex] = value;
-                      });
-                      print('Updated Answers: $_userAnswers');
-                    },
-                  );
-                }).toList(),
-              ),
-
-            SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (_currentQuestionIndex > 0)
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _currentQuestionIndex--;
-                      });
-                    },
-                    child: Text('이전'),
-                  ),
-                if (_currentQuestionIndex < _quizList.length - 1)
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _currentQuestionIndex++;
-                      });
-                    },
-                    child: Text('다음'),
-                  ),
-                if (_currentQuestionIndex == _quizList.length - 1)
-                  ElevatedButton(
-                    onPressed: _sendAnswers,
-                    child: Text('제출'),
-                  ),
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
               ],
             ),
-          ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '문제 ${_currentQuestionIndex + 1} / ${_quizList.length}',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  questionText,
+                  style: TextStyle(fontSize: 20),
+                ),
+                SizedBox(height: 24),
+
+                // OX 버튼
+                if (!isMultipleChoice)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _userAnswers[_currentQuestionIndex] = 'O';
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _userAnswers[_currentQuestionIndex] == 'O'
+                              ? const Color(0xFFB8E0FF)
+                              : Colors.white,
+                          foregroundColor: Colors.black87,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                        child: Text('O'),
+                      ),
+                      SizedBox(width: 20),
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _userAnswers[_currentQuestionIndex] = 'X';
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _userAnswers[_currentQuestionIndex] == 'X'
+                              ? const Color(0xFFB8E0FF)
+                              : Colors.white,
+                          foregroundColor: Colors.black87,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                        child: Text('X'),
+                      ),
+                    ],
+                  )
+                else
+                  Column(
+                    children: options.asMap().entries.map((entry) {
+                      int idx = entry.key;
+                      String option = entry.value;
+                      return RadioListTile<String>(
+                        title: Text(option),
+                        value: (idx + 1).toString(),
+                        groupValue: _userAnswers[_currentQuestionIndex],
+                        activeColor: Colors.indigo[400],
+                        onChanged: (value) {
+                          setState(() {
+                            _userAnswers[_currentQuestionIndex] = value!;
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+
+                SizedBox(height: 24),
+
+                // 이전/다음/제출 버튼
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    if (_currentQuestionIndex > 0)
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _currentQuestionIndex--;
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFB8E0FF),
+                          foregroundColor: Colors.black87,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                        ),
+                        child: Text('이전', style: TextStyle(fontSize: 16)),
+                      )
+                    else
+                      SizedBox(width: 100), // 이전 버튼 공간
+
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_currentQuestionIndex < _quizList.length - 1) {
+                          setState(() {
+                            _currentQuestionIndex++;
+                          });
+                        } else {
+                          _sendAnswers();
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _currentQuestionIndex < _quizList.length - 1
+                            ? const Color(0xFFB8E0FF)
+                            : Colors.indigo[900],
+                        foregroundColor: _currentQuestionIndex < _quizList.length - 1
+                            ? Colors.black87
+                            : Colors.white, // ← 제출 버튼일 때 흰색 글자
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      ),
+                      child: Text(
+                        _currentQuestionIndex < _quizList.length - 1 ? '다음' : '제출',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

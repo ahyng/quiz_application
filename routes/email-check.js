@@ -11,18 +11,24 @@ const salt = 10;
 // 회원가입 - 이메일 확인
 router.post('/', async (req, res) => {
     console.log(req.body);
-    const idCheck = await User.findOne({userId : req.body.email});
+
+    try {
+        const idCheck = await User.findOne({userId : req.body.email});
     
-    if (idCheck) {
-        res.status(409).json({success : false, message : "id exists"});
-    } else {
-        const send = await sendEmail(req.body.email);
-        console.log('send:', send);
-        await redisClient.setEx(`otp:${req.body.email}`, 180, String(send.otp));
-        if (send.success) {
-            res.status(200).json({success : true, otp : send.otp});
+        if (idCheck) {
+            res.status(409).json({success : false, message : "id exists"});
+        } else {
+            const send = await sendEmail(req.body.email);
+            console.log('send:', send);
+            await redisClient.setEx(`otp:${req.body.email}`, 180, String(send.otp));
+            if (send.success) {
+                res.status(200).json({success : true, otp : send.otp});
+            }
         }
+    } catch (e) {
+        res.status(500).json({message : e});
     }
+    
 })
 
 module.exports = router;

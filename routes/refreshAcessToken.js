@@ -6,21 +6,27 @@ const router = express.Router();
 
 // accessToken 재생성
 router.post('/', async (req, res) => {
-    const refreshToken = await client.get(`refresh:${req.body.userId}`);
 
-    if (!refreshToken) {
-        res.status(401).json({message : "No refreshToken"});
-    }
+    try {
+        const refreshToken = await client.get(`refresh:${req.body.userId}`);
 
-    jwt.verify(refreshToken, process.env.jWT_SECRET_KEY, (err, user) => {
-        if (err) {
-            res.status(403).json({message : "Invalid refreshToken"});
+        if (!refreshToken) {
+            res.status(401).json({message : "No refreshToken"});
         }
 
-        const newAccessToken = jwt.sign({userId : user.id, role : 'user'});
+        jwt.verify(refreshToken, process.env.jWT_SECRET_KEY, (err, user) => {
+            if (err) {
+                res.status(403).json({message : "Invalid refreshToken"});
+            }
 
-        res.json({ accessToken : newAccessToken });
-    })
+            const newAccessToken = jwt.sign({userId : user.id, role : 'user'});
+
+            res.json({ accessToken : newAccessToken });
+        })
+    } catch (e) {
+        res.status(500).json({message : e});
+    }
+    
 })
 
 module.exports = router;

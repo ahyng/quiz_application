@@ -59,7 +59,7 @@ const deleteAccount = require('./routes/delete-account');
 // const searchQuiz = require('./routes/search');
 const otpCheck = require('./routes/otp-check');
 const requestResetPwd = require('./routes/request-reset-pwd');
-const myPage = require('./routes/my-page');
+// const myPage = require('./routes/my-page');
 
 // app.use(authenticate);
 
@@ -83,4 +83,4 @@ app.use('/delete-account', deleteAccount);
 // app.use('/search', searchQuiz); -> client
 app.use('/otp-check', otpCheck);
 app.use('/request-reset-pwd', requestResetPwd); // 비밀번호 변경시 otp 전송
-app.use('/my-page', myPage);
+// app.use('/my-page', myPage);

@@ -6,7 +6,7 @@ const cookieParser = require('cookie-parser');
 require("dotenv").config();
 
 const app = express();
-const port = 8080;
+const port = process.env.PORT || 8080;
 
 app.use(express.json());
 app.use(express.urlencoded({extended : true}));
@@ -27,8 +27,16 @@ const dbConnect = async () => {
 
 dbConnect();
 
+// client.on('connect', () => {
+//     console.log('Connected to Redis');
+// });
+
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
+})
+
+app.get('/', (req, res) => {
+    res.send('Hello World!');
 })
 
 const signUpRoutes = require('./routes/sign-up');

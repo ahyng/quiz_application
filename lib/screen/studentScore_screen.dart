@@ -111,7 +111,7 @@ class _StudentScoreScreenState extends State<StudentScoreScreen> {
             builder: (context) => DraggableScrollableSheet(
               expand: false,
               builder: (context, scrollController) => Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: ListView(
                   controller: scrollController,
                   children: [

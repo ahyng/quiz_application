@@ -15,33 +15,29 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
   int currentIndex = 0;
   int questionNumber = 1;
   TextEditingController questionController = TextEditingController();
-  TextEditingController answerController = TextEditingController();
   TextEditingController titleController = TextEditingController();
   List<TextEditingController> optionControllers =
       List.generate(5, (index) => TextEditingController());
+
   String questionType = '객관식'; // '객관식' or 'OX'
+  String selectedAnswer = ''; // 정답으로 선택된 값
   String code = '';
 
   void saveCurrentQuestion() {
     if (questionController.text.isNotEmpty) {
+      final question = {
+        'question': questionController.text,
+        'isMultipleChoice': questionType == '객관식',
+        'answer': selectedAnswer,
+        'options': questionType == '객관식'
+            ? optionControllers.map((c) => c.text).toList()
+            : [],
+      };
+
       if (quizList.length > currentIndex) {
-        quizList[currentIndex] = {
-          'question': questionController.text,
-          'isMultipleChoice': questionType == '객관식',
-          'answer': answerController.text,
-          'options': questionType == '객관식'
-              ? optionControllers.map((c) => c.text).toList()
-              : [],
-        };
+        quizList[currentIndex] = question;
       } else {
-        quizList.add({
-          'question': questionController.text,
-          'isMultipleChoice': questionType == '객관식',
-          'answer': answerController.text,
-          'options': questionType == '객관식'
-              ? optionControllers.map((c) => c.text).toList()
-              : [],
-        });
+        quizList.add(question);
       }
     }
   }
@@ -98,11 +94,10 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
   }
 
   Future<void> sendQuizData() async {
-  bool isAuthValid = await checkAndRefreshToken();
-  if (!isAuthValid) return; // 토큰 무효 → 로그인 이동됨
+    bool isAuthValid = await checkAndRefreshToken();
+    if (!isAuthValid) return;
 
-  // 토큰이 유효하므로 퀴즈 제출 시도
-  await _attemptSubmitQuiz();
+    await _attemptSubmitQuiz();
   }
 
   Future<void> _attemptSubmitQuiz({bool isRetry = false}) async {
@@ -154,10 +149,8 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
         var responseData = jsonDecode(response.body);
         String newAccessToken = responseData['accessToken'];
         await storage.write(key: 'access_token', value: newAccessToken);
-        print('액세스 토큰 갱신 완료. 다시 요청 시도 중...');
-        await _attemptSubmitQuiz(isRetry: true); // 재시도
+        await _attemptSubmitQuiz(isRetry: true);
       } else if (response.statusCode == 401) {
-        print('인증 실패. 로그인 화면으로 이동합니다.');
         Navigator.pushNamed(context, '/login');
       } else {
         print('기타 오류: ${response.statusCode} - ${response.body}');
@@ -168,100 +161,105 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
   }
 
   Future<bool> checkAndRefreshToken() async {
-  String? accessToken = await storage.read(key: 'access_token');
-  String? refreshToken = await storage.read(key: 'refresh_token');
+    String? accessToken = await storage.read(key: 'access_token');
+    String? refreshToken = await storage.read(key: 'refresh_token');
 
-  if (accessToken == null || refreshToken == null) {
-    Navigator.pushNamed(context, '/login');
-    return false;
-  }
-
-  var url = Uri.parse('${dotenv.env['ADDRESS']}/write');
-  var headers = {
-    'Content-Type': 'application/json',
-    'accessToken': 'Bearer $accessToken',
-    'refreshToken': 'Bearer $refreshToken',
-  };
-
-  try {
-    var response = await http.post(url, headers: headers);
-
-    if (response.statusCode == 200) {
-      print('✅ accessToken 유효');
-      return true;
-    } else if (response.statusCode == 201) {
-      var responseData = jsonDecode(response.body);
-      String newAccessToken = responseData['accessToken'];
-      await storage.write(key: 'access_token', value: newAccessToken);
-      print('🔄 accessToken 갱신 성공');
-      return true;
-    } else if (response.statusCode == 401) {
-      print('❌ access/refresh 토큰 만료 → 로그인으로 이동');
+    if (accessToken == null || refreshToken == null) {
       Navigator.pushNamed(context, '/login');
       return false;
-    } else {
-      print('⚠️ 알 수 없는 상태 코드: ${response.statusCode}');
+    }
+
+    var url = Uri.parse('${dotenv.env['ADDRESS']}/write');
+    var headers = {
+      'Content-Type': 'application/json',
+      'accessToken': 'Bearer $accessToken',
+      'refreshToken': 'Bearer $refreshToken',
+    };
+
+    try {
+      var response = await http.post(url, headers: headers);
+
+      if (response.statusCode == 200) {
+        return true;
+      } else if (response.statusCode == 201) {
+        var responseData = jsonDecode(response.body);
+        String newAccessToken = responseData['accessToken'];
+        await storage.write(key: 'access_token', value: newAccessToken);
+        return true;
+      } else {
+        Navigator.pushNamed(context, '/login');
+        return false;
+      }
+    } catch (e) {
+      print('auth-check 오류: $e');
       return false;
     }
-  } catch (e) {
-    print('🌐 auth-check 오류: $e');
-    return false;
   }
-}
 
   void loadQuestion(int index) {
-  if (quizList.length > index) {
-    final quiz = quizList[index];
-    questionController.text = quiz['question'] ?? '';
-    answerController.text = quiz['answer'] ?? '';
-    questionType = quiz['isMultipleChoice'] == true ? '객관식' : 'OX';
+    if (quizList.length > index) {
+      final quiz = quizList[index];
+      questionController.text = quiz['question'] ?? '';
+      questionType = quiz['isMultipleChoice'] == true ? '객관식' : 'OX';
+      selectedAnswer = quiz['answer'] ?? '';
 
-    if (questionType == '객관식' && quiz['options'] != null) {
-      List<dynamic> options = quiz['options'];
-      for (int i = 0; i < 5; i++) {
-        optionControllers[i].text = i < options.length ? options[i] : '';
-      }
-    } else {
-      for (int i = 0; i < 5; i++) {
-        optionControllers[i].clear();
+      if (questionType == '객관식' && quiz['options'] != null) {
+        List<dynamic> options = quiz['options'];
+        for (int i = 0; i < 5; i++) {
+          optionControllers[i].text = i < options.length ? options[i] : '';
+        }
+      } else {
+        for (int i = 0; i < 5; i++) {
+          optionControllers[i].clear();
+        }
       }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFB8E0FF),
-      appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.home, color: Colors.indigo[900]),
-          onPressed: () {
-            Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-          },
-        ),
-        backgroundColor: const Color(0xFFB8E0FF),
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          '퀴즈 만들기',
-          style: TextStyle(
-            color: Colors.indigo[900],
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.check, color: Colors.indigo[900]),
-            onPressed: submitQuiz,
-          ),
-        ],
+  return Scaffold(
+    backgroundColor: const Color(0xFFB8E0FF),
+    appBar: AppBar(
+      leading: IconButton(
+        icon: Icon(Icons.home, color: Colors.indigo[900]),
+        onPressed: () {
+          Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+        },
       ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(), // 화면 탭 시 키보드 숨김
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.all(16.0),
+      backgroundColor: const Color(0xFFB8E0FF),
+      elevation: 0,
+      centerTitle: true,
+      title: Text(
+        '퀴즈 만들기',
+        style: TextStyle(
+          color: Colors.indigo[900],
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(Icons.check, color: Colors.indigo[900]),
+          onPressed: submitQuiz,
+        ),
+      ],
+    ),
+    body: Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 12,
+                offset: Offset(0, 6),
+              ),
+            ],
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -275,68 +273,99 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
                 decoration: InputDecoration(
                   labelText: '문제 입력',
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Colors.grey[100],
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 20),
+              Text('문제 유형 선택:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+              SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () => setState(() => questionType = '객관식'),
-                      child: Text('객관식'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: questionType == '객관식' ? Colors.indigo : Colors.grey[400],
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
+                      child: Text('객관식'),
                     ),
                   ),
                   SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () => setState(() => questionType = 'OX'),
-                      child: Text('OX문제'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: questionType == 'OX' ? Colors.indigo : Colors.grey[400],
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
+                      child: Text('OX문제'),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 16),
-              TextField(
-                controller: answerController,
-                decoration: InputDecoration(
-                  labelText: '정답 입력',
-                  hintText: questionType == '객관식' 
-                      ? '1, 2, 3, 4, 5 중 하나를 입력하세요' 
-                      : 'O 또는 X를 입력하세요',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              SizedBox(height: 16),
+              SizedBox(height: 20),
               if (questionType == '객관식') ...[
                 for (int i = 0; i < 5; i++)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: TextField(
-                      controller: optionControllers[i],
-                      decoration: InputDecoration(
-                        labelText: '선택지 ${i + 1}',
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
+                    child: Row(
+                      children: [
+                        Radio<String>(
+                          value: '${i + 1}',
+                          groupValue: selectedAnswer,
+                          onChanged: (value) {
+                            setState(() {
+                              selectedAnswer = value!;
+                            });
+                          },
+                        ),
+                        Expanded(
+                          child: TextField(
+                            controller: optionControllers[i],
+                            decoration: InputDecoration(
+                              labelText: '선택지 ${i + 1}',
+                              filled: true,
+                              fillColor: Colors.grey[100],
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+              ] else ...[
+                Text('정답 선택:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.indigo[800])),
+                SizedBox(height: 12),
+                Row(
+                  children: ['O', 'X'].map((ox) {
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              selectedAnswer = ox;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: selectedAnswer == ox ? Colors.indigo : Colors.grey[400],
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            minimumSize: Size(0, 60), // 높이 키움
+                            padding: EdgeInsets.symmetric(vertical: 16), // 내부 패딩 추가
+                          ),
+                          child: Text(ox),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
               ],
-              SizedBox(height: 20),
+              SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -363,7 +392,7 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
                         currentIndex++;
                         questionNumber++;
                         questionController.clear();
-                        answerController.clear();
+                        selectedAnswer = '';
                         for (var c in optionControllers) {
                           c.clear();
                         }
@@ -373,15 +402,13 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
                   ),
                 ],
               ),
-              SizedBox(height: 16),
               if (code.isNotEmpty)
-                Center(
-                  child: Text(
-                    '퀴즈 코드: $code',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green[800],
+                Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: Center(
+                    child: Text(
+                      '퀴즈 코드: $code',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green[800]),
                     ),
                   ),
                 ),
@@ -389,6 +416,8 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 }

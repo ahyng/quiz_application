@@ -12,6 +12,7 @@ class _EditQuizScreenState extends State<EditQuiz> {
   List<Map<String, dynamic>> quizList = [];
   int currentIndex = 0;
   int questionNumber = 1;
+  String selectedAnswer = '';
   TextEditingController questionController = TextEditingController();
   TextEditingController answerController = TextEditingController();
   TextEditingController titleController = TextEditingController();
@@ -59,7 +60,7 @@ class _EditQuizScreenState extends State<EditQuiz> {
     if (index < quizList.length) {
       var quiz = quizList[index];
       questionController.text = quiz['question'];
-      answerController.text = quiz['answer'];
+      selectedAnswer = quiz['answer'];
       questionType = quiz['isMultipleChoice'] ? '객관식' : 'OX';
 
       // 선택지 설정
@@ -82,7 +83,7 @@ class _EditQuizScreenState extends State<EditQuiz> {
       quizList[currentIndex] = {
         'question': questionController.text,
         'isMultipleChoice': questionType == '객관식',
-        'answer': answerController.text,
+        'answer': selectedAnswer,
         'options': questionType == '객관식'
             ? optionControllers.map((c) => c.text).toList()
             : [],
@@ -210,35 +211,75 @@ class _EditQuizScreenState extends State<EditQuiz> {
                     ),
                   ),
                 ),
-                SizedBox(height: 16),
-                TextField(
-                  controller: answerController,
-                  decoration: InputDecoration(
-                    labelText: '정답 입력',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                if (questionType == '객관식') ...[
-                  SizedBox(height: 16),
-                  for (int i = 0; i < 5; i++) ...[
-                    TextField(
-                      controller: optionControllers[i],
-                      decoration: InputDecoration(
-                        labelText: '선택지 ${i + 1}',
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+              SizedBox(height: 16),
+              Text('정답 선택:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo[900])),
+
+              if (questionType == '객관식') ...[
+                SizedBox(height: 8),
+                for (int i = 0; i < 5; i++) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: optionControllers[i],
+                          decoration: InputDecoration(
+                            labelText: '선택지 ${i + 1}',
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: 12),
-                  ],
+                      Radio<String>(
+                        value: '${i + 1}',
+                        groupValue: selectedAnswer,
+                        onChanged: (value) {
+                          setState(() {
+                            selectedAnswer = value!;
+                          });
+                        },
+                      ),
+                      Text('${i + 1}번'),
+                    ],
+                  ),
+                  SizedBox(height: 8),
                 ],
+              ]
+              else if (questionType == 'OX') ...[
+                SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: ['O', 'X'].map((ox) {
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              selectedAnswer = ox;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: selectedAnswer == ox ? Colors.indigo : Colors.grey[400],
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            minimumSize: Size(0, 60),
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: Text(
+                            ox,
+                            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
                 SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:characters/characters.dart';
 
 
 class ManageQuiz extends StatefulWidget {
@@ -16,6 +17,10 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
   List<Map<String, dynamic>> quizList = [];
   final FlutterSecureStorage storage = FlutterSecureStorage();
   String searchQuery = '';
+  String normalize(String text) {
+    return text.replaceAll(RegExp(r'\s+'), '');
+  }
+
 
   @override
   void initState() {
@@ -173,19 +178,6 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
     }
   }
 
-  Future<void> logout(BuildContext context) async {
-  try {
-    // Remove tokens from secure storage
-    await storage.delete(key: 'access_token');
-    await storage.delete(key: 'refresh_token');
-    
-    // Navigate to the login screen
-    Navigator.pushReplacementNamed(context, '/login');
-  } catch (e) {
-    print('로그아웃 중 오류 발생: $e');
-  }
-}
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -205,10 +197,9 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.logout, color: Colors.indigo[900]),
-            onPressed: () async {
-              logout(context);
-              Navigator.pushNamed(context, '/login');
+            icon: Icon(Icons.person, color: Colors.indigo[900]),
+            onPressed: () {
+              Navigator.pushNamed(context, '/mypage');
             },
           ),
         ],
@@ -230,7 +221,7 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
               ),
               onChanged: (value) {
                 setState(() {
-                  searchQuery = value.toLowerCase();
+                  searchQuery = value;
                 });
               },
             ),
@@ -239,9 +230,12 @@ class _ManageQuizScreenState extends State<ManageQuiz> {
             child: Builder(
               builder: (context) {
                 List<Map<String, dynamic>> filteredQuizList = quizList.where((quiz) {
-                  final title = (quiz['title'] ?? '').toLowerCase();
-                  return title.contains(searchQuery);
+                  final titleRaw = quiz['title']?.toString() ?? '';
+                  final title = normalize(titleRaw);
+                  final query = normalize(searchQuery);
+                  return query.isEmpty || title.contains(query);
                 }).toList();
+
 
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),

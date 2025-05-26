@@ -2,34 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'dart:convert'; // JSON 파싱을 위해 추가
+import 'dart:convert';
+import 'dart:async';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   final FlutterSecureStorage storage = FlutterSecureStorage(); // 토큰 저장소
+  DateTime? _lastBackPressed; // 뒤로가기 시간 추적
 
   Future<void> checkAccessToken(BuildContext context) async {
     try {
-      // 저장된 토큰 확인
       String? accessToken = await storage.read(key: 'access_token');
       String? refreshToken = await storage.read(key: 'refresh_token');
-      
+
       if (accessToken == null || accessToken.isEmpty) {
         print('저장된 토큰이 없음! 빈 값으로 요청 보냄');
-        accessToken = ''; // 백엔드에서 401을 받을 수 있도록 빈 값으로 요청
+        accessToken = '';
         refreshToken = '';
       } else {
         print('가져온 토큰: $accessToken');
       }
 
       var url = Uri.parse('${dotenv.env['ADDRESS']}/main');
-
       print('백엔드 요청 시작: $url');
 
       var response = await http.get(
         url,
         headers: {
           'Content-Type': 'application/json',
-          'accessToken': 'Bearer $accessToken', // 헤더에 토큰 포함
+          'accessToken': 'Bearer $accessToken',
           'refreshToken': 'Bearer $refreshToken',
         },
       );
@@ -41,19 +46,17 @@ class HomeScreen extends StatelessWidget {
         print('200 응답 → 내가 만든 퀴즈 화면으로 이동');
         Navigator.pushNamed(context, '/manQuiz');
       } else if (response.statusCode == 201) {
-        // 응답 본문에서 새로운 액세스 토큰 추출
-        var responseData = jsonDecode(response.body); // JSON 디코딩
-        String accessToken = responseData['accessToken']; // 'accessToken' 값을 추출
+        var responseData = jsonDecode(response.body);
+        String accessToken = responseData['accessToken'];
         await storage.write(key: 'access_token', value: accessToken);
         print('201 응답 → 새 액세스 토큰 저장: $accessToken');
-        
-        // 갱신된 토큰으로 다시 백엔드에 요청 보내기
+
         var newResponse = await http.get(
           url,
           headers: {
             'Content-Type': 'application/json',
-            'accessToken': 'Bearer $accessToken', // 갱신된 토큰 사용
-            'refreshToken': 'Bearer $refreshToken', // 기존 리프레시 토큰 사용
+            'accessToken': 'Bearer $accessToken',
+            'refreshToken': 'Bearer $refreshToken',
           },
         );
 
@@ -69,6 +72,11 @@ class HomeScreen extends StatelessWidget {
       } else if (response.statusCode == 401) {
         print('401 응답 → 로그인 화면으로 이동');
         Navigator.pushNamed(context, '/login');
+        } else if (response.statusCode == 501) {
+          // 네트워크 문제 안내
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('네트워크 연결이 불안정합니다. 잠시 후 다시 시도해주세요.')),
+          );
       } else {
         print('기타 오류: ${response.statusCode} - ${response.body}');
       }
@@ -77,87 +85,94 @@ class HomeScreen extends StatelessWidget {
     }
   }
 
+  Future<bool> onWillPop() async {
+    DateTime now = DateTime.now();
+    if (_lastBackPressed == null || now.difference(_lastBackPressed!) > Duration(seconds: 2)) {
+      _lastBackPressed = now;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('한 번 더 누르면 종료됩니다')),
+      );
+      return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFB8E0FF), // 전체 배경 색상 통일
-      appBar: AppBar(
+    return WillPopScope(
+      onWillPop: onWillPop,
+      child: Scaffold(
         backgroundColor: const Color(0xFFB8E0FF),
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          'QUIZ FACTORY',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.indigo[900],
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFB8E0FF),
+          elevation: 0,
+          centerTitle: true,
+          title: Text(
+            'QUIZ FACTORY',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.indigo[900],
+            ),
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.person, color: Colors.indigo[900]),
-            onPressed: () {
-              Navigator.pushNamed(context, '/mypage');
-            },
-          ),
-        ],
-      ),
-      body: Center(
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          margin: const EdgeInsets.symmetric(horizontal: 24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 12,
-                offset: Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.settings, size: 48, color: Colors.indigo[900]),
-              SizedBox(height: 16),
-              Text(
-                '퀴즈를 시작해볼까요?',
-                style: TextStyle(fontSize: 18, color: Colors.indigo[900]),
-              ),
-              SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: () => checkAccessToken(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB8E0FF),
-                  foregroundColor: Colors.indigo[900],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  minimumSize: Size(200, 50),
+        body: Center(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            margin: const EdgeInsets.symmetric(horizontal: 24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 12,
+                  offset: Offset(0, 6),
                 ),
-                child: Text('내가 만든 퀴즈', style: TextStyle(fontSize: 18)),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/enter_code');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB8E0FF),
-                  foregroundColor: Colors.indigo[900],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  minimumSize: Size(200, 50),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.settings, size: 48, color: Colors.indigo[900]),
+                SizedBox(height: 16),
+                Text(
+                  '퀴즈를 시작해볼까요?',
+                  style: TextStyle(fontSize: 18, color: Colors.indigo[900]),
                 ),
-                child: Text('퀴즈 풀기', style: TextStyle(fontSize: 18)),
-              ),
-            ],
+                SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () => checkAccessToken(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB8E0FF),
+                    foregroundColor: Colors.indigo[900],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    minimumSize: Size(200, 50),
+                  ),
+                  child: Text('내가 만든 퀴즈', style: TextStyle(fontSize: 18)),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/enter_code');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB8E0FF),
+                    foregroundColor: Colors.indigo[900],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    minimumSize: Size(200, 50),
+                  ),
+                  child: Text('퀴즈 풀기', style: TextStyle(fontSize: 18)),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
-  }
+}

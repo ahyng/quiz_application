@@ -16,6 +16,9 @@ router.get('/', authenticate, async (req, res) => {
         console.log('퀴즈 찾기');
         console.log('find:', findData);
         if (findData) {
+            if (res.locals.newAccessToken) {
+                res.status(201).json({success : true, quiz : findData, accesstoken : res.locals.newAccessToken});
+            }
             res.status(200).json({success : true, quiz : findData});
         } else {
             res.status(401).json({success : false, detail : "quiz not found"});

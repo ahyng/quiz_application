@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config(); 
 
-const authenticate = async (req, res, next) => {
+const authenticate = (req, res, next) => {
     const accessAuth = req.headers.accesstoken;
     const refreshAuth = req.headers.refreshtoken;
     const accessToken = accessAuth && accessAuth.split(" ")[1];
@@ -25,7 +25,9 @@ const authenticate = async (req, res, next) => {
                         // accessToken 발급    
                         const newAccessToken = jwt.sign({ userId: user.userId }, `${process.env.JWT_SECRET_KEY}`, { expiresIn: '2m' });
                         req.user = user;
-                        return res.status(201).json({accessToken : newAccessToken});
+                        res.locals.newAccessToken = newAccessToken;
+                        next();
+                        // return res.status(201).json({accessToken : newAccessToken});
                     });
                 } catch(e) {
                     console.log(e);

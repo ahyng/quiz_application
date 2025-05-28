@@ -93,11 +93,18 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
     );
   }
 
+  bool isSubmitting = false;
+
   Future<void> sendQuizData() async {
     bool isAuthValid = await checkAndRefreshToken();
-    if (!isAuthValid) return;
+    if (!isAuthValid) {
+      isSubmitting = false;
+      return;
+    }
 
     await _attemptSubmitQuiz();
+
+    isSubmitting = false;
   }
 
   Future<void> _attemptSubmitQuiz({bool isRetry = false}) async {
@@ -149,8 +156,50 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
         var responseData = jsonDecode(response.body);
         String newAccessToken = responseData['accessToken'];
         await storage.write(key: 'access_token', value: newAccessToken);
-        await _attemptSubmitQuiz(isRetry: true);
-      } else if (response.statusCode == 401) {
+
+        setState(() {
+          this.code = code;
+        });
+        
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('퀴즈 제출 완료'),
+              content: Text('퀴즈가 성공적으로 저장되었습니다.\n퀴즈 코드: $code'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacementNamed(context, '/manQuiz');
+                  },
+                  child: Text('확인'),
+                ),
+              ],
+            );
+          },
+        );
+      } else if (response.statusCode == 409) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('중복된 제목'),
+            content: Text('이미 존재하는 제목입니다. 다른 제목을 입력해주세요.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  showTitleDialog(); // 제목 다시 입력받기
+                },
+                child: Text('확인'),
+              ),
+            ],
+          );
+        },
+      );
+    } else if (response.statusCode == 401) {
+        print('accessToken 없음. 재로그인 필요');
         Navigator.pushNamed(context, '/login');
       } else {
         print('기타 오류: ${response.statusCode} - ${response.body}');
@@ -165,35 +214,17 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
     String? refreshToken = await storage.read(key: 'refresh_token');
 
     if (accessToken == null || refreshToken == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('로그인 정보가 만료되었습니다. 다시 로그인해주세요.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+
       Navigator.pushNamed(context, '/login');
       return false;
     }
-
-    var url = Uri.parse('${dotenv.env['ADDRESS']}/write');
-    var headers = {
-      'Content-Type': 'application/json',
-      'accessToken': 'Bearer $accessToken',
-      'refreshToken': 'Bearer $refreshToken',
-    };
-
-    try {
-      var response = await http.post(url, headers: headers);
-
-      if (response.statusCode == 200) {
-        return true;
-      } else if (response.statusCode == 201) {
-        var responseData = jsonDecode(response.body);
-        String newAccessToken = responseData['accessToken'];
-        await storage.write(key: 'access_token', value: newAccessToken);
-        return true;
-      } else {
-        Navigator.pushNamed(context, '/login');
-        return false;
-      }
-    } catch (e) {
-      print('auth-check 오류: $e');
-      return false;
-    }
+    return true;
   }
 
   void loadQuestion(int index) {
@@ -218,206 +249,199 @@ class _MakeQuizScreenState extends State<MakeQuiz> {
 
   @override
   Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: const Color(0xFFB8E0FF),
-    appBar: AppBar(
-      leading: IconButton(
-        icon: Icon(Icons.home, color: Colors.indigo[900]),
-        onPressed: () {
-          Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-        },
-      ),
+    return Scaffold(
       backgroundColor: const Color(0xFFB8E0FF),
-      elevation: 0,
-      centerTitle: true,
-      title: Text(
-        '퀴즈 만들기',
-        style: TextStyle(
-          color: Colors.indigo[900],
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      actions: [
-        IconButton(
-          icon: Icon(Icons.check, color: Colors.indigo[900]),
-          onPressed: submitQuiz,
-        ),
-      ],
-    ),
-    body: Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 12,
-                offset: Offset(0, 6),
-              ),
-            ],
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFB8E0FF),
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          '퀴즈 만들기',
+          style: TextStyle(
+            color: Colors.indigo[900],
+            fontWeight: FontWeight.bold,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '문제 $questionNumber',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.indigo[800]),
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: questionController,
-                decoration: InputDecoration(
-                  labelText: '문제 입력',
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              SizedBox(height: 20),
-              Text('문제 유형 선택:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-              SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => setState(() => questionType = '객관식'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: questionType == '객관식' ? Colors.indigo : Colors.grey[400],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: Text('객관식'),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => setState(() => questionType = 'OX'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: questionType == 'OX' ? Colors.indigo : Colors.grey[400],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: Text('OX문제'),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20),
-              if (questionType == '객관식') ...[
-                for (int i = 0; i < 5; i++)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Row(
-                      children: [
-                        Radio<String>(
-                          value: '${i + 1}',
-                          groupValue: selectedAnswer,
-                          onChanged: (value) {
-                            setState(() {
-                              selectedAnswer = value!;
-                            });
-                          },
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: optionControllers[i],
-                            decoration: InputDecoration(
-                              labelText: '선택지 ${i + 1}',
-                              filled: true,
-                              fillColor: Colors.grey[100],
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ] else ...[
-                Text('정답 선택:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.indigo[800])),
-                SizedBox(height: 12),
-                Row(
-                  children: ['O', 'X'].map((ox) {
-                    return Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              selectedAnswer = ox;
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: selectedAnswer == ox ? Colors.indigo : Colors.grey[400],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            minimumSize: Size(0, 60), // 높이 키움
-                            padding: EdgeInsets.symmetric(vertical: 16), // 내부 패딩 추가
-                          ),
-                          child: Text(ox),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.check, color: Colors.indigo[900]),
+            onPressed: submitQuiz,
+          ),
+        ],
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 12,
+                  offset: Offset(0, 6),
                 ),
               ],
-              SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.arrow_back, size: 32),
-                    color: currentIndex > 0 ? Colors.indigo : Colors.grey,
-                    onPressed: currentIndex > 0
-                        ? () {
-                            saveCurrentQuestion();
-                            setState(() {
-                              currentIndex--;
-                              questionNumber--;
-                            });
-                            loadQuestion(currentIndex);
-                          }
-                        : null,
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.arrow_forward, size: 32),
-                    color: Colors.indigo,
-                    onPressed: () {
-                      saveCurrentQuestion();
-                      setState(() {
-                        currentIndex++;
-                        questionNumber++;
-                        questionController.clear();
-                        selectedAnswer = '';
-                        for (var c in optionControllers) {
-                          c.clear();
-                        }
-                      });
-                      Future.delayed(Duration.zero, () => loadQuestion(currentIndex));
-                    },
-                  ),
-                ],
-              ),
-              if (code.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: Center(
-                    child: Text(
-                      '퀴즈 코드: $code',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green[800]),
-                    ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '문제 $questionNumber',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.indigo[800]),
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: questionController,
+                  decoration: InputDecoration(
+                    labelText: '문제 입력',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
-            ],
+                SizedBox(height: 20),
+                Text('문제 유형 선택:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => setState(() => questionType = '객관식'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: questionType == '객관식' ? Colors.indigo : Colors.grey[400],
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Text('객관식'),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => setState(() => questionType = 'OX'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: questionType == 'OX' ? Colors.indigo : Colors.grey[400],
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Text('OX문제'),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                if (questionType == '객관식') ...[
+                  for (int i = 0; i < 5; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        children: [
+                          Radio<String>(
+                            value: '${i + 1}',
+                            groupValue: selectedAnswer,
+                            onChanged: (value) {
+                              setState(() {
+                                selectedAnswer = value!;
+                              });
+                            },
+                          ),
+                          Expanded(
+                            child: TextField(
+                              controller: optionControllers[i],
+                              decoration: InputDecoration(
+                                labelText: '선택지 ${i + 1}',
+                                filled: true,
+                                fillColor: Colors.grey[100],
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ] else ...[
+                  Text('정답 선택:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.indigo[800])),
+                  SizedBox(height: 12),
+                  Row(
+                    children: ['O', 'X'].map((ox) {
+                      return Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                selectedAnswer = ox;
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: selectedAnswer == ox ? Colors.indigo : Colors.grey[400],
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              minimumSize: Size(0, 60), // 높이 키움
+                              padding: EdgeInsets.symmetric(vertical: 16), // 내부 패딩 추가
+                            ),
+                            child: Text(ox),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+                SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.arrow_back, size: 32),
+                      color: currentIndex > 0 ? Colors.indigo : Colors.grey,
+                      onPressed: currentIndex > 0
+                          ? () {
+                              saveCurrentQuestion();
+                              setState(() {
+                                currentIndex--;
+                                questionNumber--;
+                              });
+                              loadQuestion(currentIndex);
+                            }
+                          : null,
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.arrow_forward, size: 32),
+                      color: Colors.indigo,
+                      onPressed: () {
+                        saveCurrentQuestion();
+                        setState(() {
+                          currentIndex++;
+                          questionNumber++;
+                          questionController.clear();
+                          selectedAnswer = '';
+                          for (var c in optionControllers) {
+                            c.clear();
+                          }
+                        });
+                        Future.delayed(Duration.zero, () => loadQuestion(currentIndex));
+                      },
+                    ),
+                  ],
+                ),
+                if (code.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Center(
+                      child: Text(
+                        '퀴즈 코드: $code',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green[800]),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }

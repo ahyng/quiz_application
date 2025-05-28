@@ -47,28 +47,19 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.pushNamed(context, '/manQuiz');
       } else if (response.statusCode == 201) {
         var responseData = jsonDecode(response.body);
+        print('201 응답 데이터: $responseData');
+
         String accessToken = responseData['accessToken'];
+        if (accessToken == null || accessToken.isEmpty) {
+          print('accessToken이 응답에 없습니다!');
+          return;
+        }
         await storage.write(key: 'access_token', value: accessToken);
         print('201 응답 → 새 액세스 토큰 저장: $accessToken');
 
-        var newResponse = await http.get(
-          url,
-          headers: {
-            'Content-Type': 'application/json',
-            'accessToken': 'Bearer $accessToken',
-            'refreshToken': 'Bearer $refreshToken',
-          },
-        );
+        refreshToken ??= '';
 
-        print('새 요청 응답 코드: ${newResponse.statusCode}');
-        print('새 요청 응답 본문: ${newResponse.body}');
-
-        if (newResponse.statusCode == 200) {
-          print('새로운 토큰으로 요청 성공 → 내가 만든 퀴즈 화면으로 이동');
-          Navigator.pushNamed(context, '/manQuiz');
-        } else {
-          print('새로운 토큰으로 요청 실패: ${newResponse.statusCode} - ${newResponse.body}');
-        }
+        Navigator.pushNamed(context, '/manQuiz');
       } else if (response.statusCode == 401) {
         print('401 응답 → 로그인 화면으로 이동');
         Navigator.pushNamed(context, '/login');

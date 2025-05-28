@@ -18,9 +18,9 @@ router.post('/', async (req, res) => {
             {new : true}
         );
         if (result) {
-            res.status(200).json({success : true});
+            return res.status(200).json({success : true});
         } else {
-            res.status(404).json({success : false, detail : 'There is no such quiz'});
+            return res.status(404).json({success : false, detail : 'There is no such quiz'});
         }
         
     } catch (e) {

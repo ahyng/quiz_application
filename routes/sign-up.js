@@ -19,9 +19,9 @@ router.post('/', async (req, res) => {
             try {
                 const hashedPwd = await bcrypt.hash(req.body.password.trim(), salt);
                 User.create({userId : req.body.email.trim(), password : hashedPwd});
-                res.status(200).json({success : true});
+                return res.status(200).json({success : true});
             } catch(e) {
-                res.status(500).json({message : e});
+                return res.status(500).json({message : e});
             }
             
         }

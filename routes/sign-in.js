@@ -27,17 +27,17 @@ router.post('/', async (req, res) => {
                 const refreshToken = jwt.sign(payload, jwtSecretKey, { expiresIn: '10m' });
 
                 console.log('succeed');
-                res.status(200).json({success : true, accessToken : accessToken, refreshToken : refreshToken});
+                return res.status(200).json({success : true, accessToken : accessToken, refreshToken : refreshToken});
             } else {
                 console.log('failed');
-                res.status(401).json({success : false, message : "invalid pwd"});
+                return res.status(401).json({success : false, message : "invalid pwd"});
             }
         } else {
             console.log('user not found');
-            res.status(401).json({success : false, message : "user not found"});
+            return res.status(401).json({success : false, message : "user not found"});
         }
     } catch (e) {
-        res.status(500).json({message : e});
+        return res.status(500).json({message : e});
     }
     
 })

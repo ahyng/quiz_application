@@ -10,14 +10,14 @@ router.post('/', authenticate, async (req, res) => {
         const result = await User.findOneAndDelete({ userId: req.user.userId});
         if (result) {
             console.log("delete-account succeed");
-            res.status(200).json({succeed : true});
+            return res.status(200).json({succeed : true});
         } else {
             console.log("can't find account");
-            res.status(404).json({succeed : false});
+            return res.status(404).json({succeed : false});
         }
     } catch (e) {
         console.log(e);
-        res.status(500).json({message : e});
+        return res.status(500).json({message : e});
     }
 })
 

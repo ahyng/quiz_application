@@ -9,12 +9,12 @@ router.post('/', async (req, res) => {
         if (req.body.email) {
             const send = await sendEmail(req.body.email);
             await redisClient.setEx(`otp:${req.body.email}`, 180, String(send.otp));
-            res.status(200).json({success : true});
+            return res.status(200).json({success : true});
         } else {
-            res.status(400).json({success : false});
+            return res.status(400).json({success : false});
         }
     } catch (e) {
-        res.status(500).json({message : e});
+        return res.status(500).json({message : e});
     }
 
     

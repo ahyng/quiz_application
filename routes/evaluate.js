@@ -76,9 +76,9 @@ router.post('/', nameCheck, async (req, res) => {
         console.log("업데이트된 퀴즈 데이터:", updatedQuiz.result);
 
         // 점수, 각 문제에 대한 채점 결과 반환
-        res.status(200).json({score : score, scoreDetails : scoreDetails});
+        return res.status(200).json({score : score, scoreDetails : scoreDetails});
     } catch(e) {
-        res.status(500).json({message : e});
+        return res.status(500).json({message : e});
     }
 })
 

@@ -17,15 +17,15 @@ router.get('/', authenticate, async (req, res) => {
         console.log('find:', findData);
         if (findData) {
             if (res.locals.newAccessToken) {
-                res.status(201).json({success : true, quiz : findData, accesstoken : res.locals.newAccessToken});
+                return res.status(201).json({success : true, quiz : findData, accessToken : res.locals.newAccessToken});
             }
-            res.status(200).json({success : true, quiz : findData});
+            return res.status(200).json({success : true, quiz : findData});
         } else {
-            res.status(401).json({success : false, detail : "quiz not found"});
+            return res.status(401).json({success : false, detail : "quiz not found"});
         }
     
     } catch (e) {
-        res.status(500).json({success : false, details : e});
+        return res.status(500).json({success : false, details : e});
     }
 })
 

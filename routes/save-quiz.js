@@ -24,16 +24,21 @@ router.post('/', authenticate, async (req, res) => {
 
         console.log('user1:', req.user);
 
-        await Quiz.create({userId :  req.user.userId, title : req.body.title, quiz : req.body.quizList, code : randomCode});
-        console.log('created');
+        // if (req.body.title && req.body.quizList) {
+            await Quiz.create({userId :  req.user.userId, title : req.body.title, quiz : req.body.quizList, code : randomCode});
+            console.log('quiz created');
 
-        if (res.locals.newAccessToken) {
-            res.status(201).json({code : randomCode, accesstoken : res.locals.newAccessToken});
-        }
-        res.status(200).json({code : randomCode});
+            if (res.locals.newAccessToken) {
+                return res.status(201).json({code : randomCode, accessToken : res.locals.newAccessToken});
+            }
+            return res.status(200).json({code : randomCode});
+        // } else {
+        //     return res.status(400).json({message : "quiz save failed"});
+        // }
+        
     } catch (e) {
         console.log('quiz save failed');
-        res.status(500).json({message : failed});
+        return res.status(500).json({message : 'failed'});
     }
 })
 

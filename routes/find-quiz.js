@@ -13,9 +13,9 @@ router.post('/', async (req, res) => {
         console.log(findQuiz.quiz);
 
         if (findQuiz) {
-            res.status(200).json({success : true, quiz : findQuiz.quiz, code : inputCode});
+            return res.status(200).json({success : true, quiz : findQuiz.quiz, code : inputCode});
         } else {
-            res.status(404).json({success : false, details : "Quiz not found"});
+            return res.status(404).json({success : false, details : "Quiz not found"});
         }
     } catch (e) {
         return res.status(500).json({ success: false, details: e });

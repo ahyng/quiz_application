@@ -11,9 +11,9 @@ router.post('/', async (req, res) => {
     try {
         const result = await Quiz.deleteOne({code : deleteCode});
         if (result.deletedCount === 0) {
-            res.status(404).json({success : false, detail : 'There is no such quiz'});
+            return res.status(404).json({success : false, detail : 'There is no such quiz'});
         } else {
-            res.status(200).json({success : true});
+            return res.status(200).json({success : true});
         }
         
     } catch (e) {

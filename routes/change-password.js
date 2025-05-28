@@ -22,10 +22,10 @@ router.post('/', async (req, res) => {
                 { new: true } 
             );
 
-            res.status(200).json({success : true});
+            return res.status(200).json({success : true});
         } catch (e) {
             console.log(e);
-            res.status(500);
+            return res.status(500);
         }
     }
 })

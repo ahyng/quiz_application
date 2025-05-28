@@ -29,7 +29,7 @@ router.post('/', nameCheck, async (req, res) => {
         });
 
         if (nameCheck) {
-            res.status(409).json({message : "exist name"})
+            return res.status(409).json({message : "exist name"})
         }
 
         for (let i=0; i< findQuiz.quiz.length; i++) {

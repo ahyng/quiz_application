@@ -23,8 +23,8 @@ router.post('/', async (req, res) => {
                     role : "user"
                 };
 
-                const accessToken = jwt.sign(payload, jwtSecretKey, {expiresIn : '1m'});
-                const refreshToken = jwt.sign(payload, jwtSecretKey, { expiresIn: '10m' });
+                const accessToken = jwt.sign(payload, jwtSecretKey, {expiresIn : '1h'});
+                const refreshToken = jwt.sign(payload, jwtSecretKey, { expiresIn: '30d' });
 
                 console.log('succeed');
                 return res.status(200).json({success : true, accessToken : accessToken, refreshToken : refreshToken});

@@ -23,7 +23,7 @@ const authenticate = (req, res, next) => {
                         }
 
                         // accessToken 발급    
-                        const newAccessToken = jwt.sign({ userId: user.userId }, `${process.env.JWT_SECRET_KEY}`, { expiresIn: '2m' });
+                        const newAccessToken = jwt.sign({ userId: user.userId }, `${process.env.JWT_SECRET_KEY}`, { expiresIn: '1h' });
                         req.user = user;
                         res.locals.newAccessToken = newAccessToken;
                         next();

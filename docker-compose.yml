@@ -3,14 +3,11 @@ services:
   app:
     build: .
     ports:
-      "8080:3000"
+      "3000:3000"
     environment:
       REDIS_URL: ${REDIS_URL}
-      # - REDIS_HOST=redis
-      # - REDIS_PORT=6379
-      # - REDIS_PASSWORD=${REDIS_PASSWORD}   
     depends_on:
-      redis
+      - redis
 
   redis:
     image: redis:7

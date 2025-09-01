@@ -6,7 +6,7 @@ const cookieParser = require('cookie-parser');
 require("dotenv").config();
 
 const app = express();
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({extended : true}));
@@ -18,7 +18,15 @@ app.use(cookieParser());
 
 const dbConnect = async () => {
     try {
-        await mongoose.connect(process.env.MONGODB_URI);
+        await mongoose.connect(process.env.MONGODB_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            keepAlive: true,
+            keepAliveInitialDelay: 300000,
+            maxPoolSize: 20,
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
         console.log('db connected');
     } catch (e) {
         console.log(e);

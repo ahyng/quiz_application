@@ -23,3 +23,6 @@ services:
           memory: 512M
         reservations:
           memory: 256M
+
+networks:
+    - default

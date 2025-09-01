@@ -12,8 +12,17 @@ const redisClient = createClient(
 redisClient.on('error', (err) => console.error('Redis Client Error', err));
 
 (async () => {
-  await redisClient.connect(); // 연결
-  console.log('Connected to Redis');
+  let connected = false;
+  while (!connected) {
+    try {
+      await redisClient.connect();
+      console.log('Connected to Redis');
+      connected = true;
+    } catch (err) {
+      console.log('Waiting for Redis to be ready...');
+      await new Promise(res => setTimeout(res, 1000));
+    }
+  }
 })();
 
 module.exports = redisClient;

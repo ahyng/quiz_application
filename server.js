@@ -19,13 +19,13 @@ app.use(cookieParser());
 const dbConnect = async () => {
     try {
         await mongoose.connect(process.env.MONGODB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            keepAlive: true,
-            keepAliveInitialDelay: 300000,
             maxPoolSize: 20,
-            serverSelectionTimeoutMS: 5000,
-            socketTimeoutMS: 45000,
+            serverSelectionTimeoutMS: 5000,  // 서버 선택 타임아웃
+            socketTimeoutMS: 45000,          // 소켓 읽기/쓰기 타임아웃
+            connectTimeoutMS: 30000,         // 연결 시도 타임아웃
+            bufferCommands: false,           // 끊긴 후 버퍼링 안 함
+            retryWrites: true,
+            retryReads: true,
         });
         console.log('db connected');
     } catch (e) {

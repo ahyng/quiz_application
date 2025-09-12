@@ -46,6 +46,8 @@ app.get('/', (req, res) => {
     res.send('Hello World!');
 })
 
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
 const signUpRoutes = require('./routes/sign-up');
 const signInRoutes = require('./routes/sign-in');
 const main = require('./routes/main');

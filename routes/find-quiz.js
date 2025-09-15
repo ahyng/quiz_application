@@ -10,7 +10,6 @@ router.post('/', async (req, res) => {
 
     try {
         const findQuiz = await Quiz.findOne({code : inputCode});
-        console.log(findQuiz.quiz);
 
         if (findQuiz) {
             return res.status(200).json({success : true, quiz : findQuiz.quiz, code : inputCode});

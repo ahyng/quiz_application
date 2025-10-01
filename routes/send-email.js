@@ -6,16 +6,18 @@ const sendEmail = async (email) => {
   console.log(email);
   const transporter = nodemailer.createTransport({
       service: 'gmail', 
+      port: 465,
+      secure: true,
       auth: {
         user: 'corangstudio@gmail.com', 
-        pass: process.env.EMAIL_PWD 
+        pass: process.env.EMAIL_PWD
       }
   });
 
   const OTP = Math.floor(1000 + Math.random() * 9000);
 
   const mailOptions = {
-    from: 'ahyng1@gmail.com', 
+    from: 'corangstudio@gmail.com', 
     to: email, 
     subject: '퀴즈팩토리 본인 인증 번호 발송', // 메일 제목
   //   text: '인증번호는' + OTP + '입니다. 해당 인증번호를 앱에서 입력해 주세요.', 

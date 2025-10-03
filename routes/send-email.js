@@ -15,8 +15,6 @@ async function sendEmail(to) {
   const OTP = Math.floor(1000 + Math.random() * 9000);
 
   try {
-    const accessToken = await oAuth2Client.getAccessToken();
-
     const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
 
     const subject = "퀴즈팩토리 본인 인증 번호 발송";

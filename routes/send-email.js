@@ -1,27 +1,38 @@
-const nodemailer = require('nodemailer');
-require('dotenv').config();
+// email.js
+const nodemailer = require("nodemailer");
+const { google } = require("googleapis");
 
+const oAuth2Client = new google.auth.OAuth2(
+  process.env.GMAIL_CLIENT_ID,
+  process.env.GMAIL_CLIENT_SECRET,
+  process.env.GMAIL_REDIRECT_URI
+);
 
-const sendEmail = async (email) => {
-  console.log(email);
-  const transporter = nodemailer.createTransport({
-      service: 'gmail', 
-      port: 465,
-      secure: true,
-      auth: {
-        user: 'corangstudio@gmail.com', 
-        pass: process.env.EMAIL_PWD
-      }
-  });
+oAuth2Client.setCredentials({ refresh_token: process.env.GMAIL_REFRESH_TOKEN });
 
+async function sendEmail(to) {
   const OTP = Math.floor(1000 + Math.random() * 9000);
 
-  const mailOptions = {
-    from: 'corangstudio@gmail.com', 
-    to: email, 
-    subject: '퀴즈팩토리 본인 인증 번호 발송', // 메일 제목
-  //   text: '인증번호는' + OTP + '입니다. 해당 인증번호를 앱에서 입력해 주세요.', 
-    html: `
+  try {
+    const accessToken = await oAuth2Client.getAccessToken();
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        type: "OAuth2",
+        user: process.env.GMAIL_USER,         
+        clientId: process.env.GMAIL_CLIENT_ID,
+        clientSecret: process.env.GMAIL_CLIENT_SECRET,
+        refreshToken: process.env.GMAIL_REFRESH_TOKEN,
+        accessToken: accessToken.token,        
+      },
+    });
+
+    const info = await transporter.sendMail({
+      from: process.env.GMAIL_USER,
+      to ,
+      subject: "퀴즈팩토리 본인 인증 번호 발송",
+      html: `
           <div style="background-color: #A4C3FF; padding: 30px;">
           <div style="text-align: center; padding: 30px; background-color: white; border-radius: 10px;">
             
@@ -39,20 +50,15 @@ const sendEmail = async (email) => {
             
           </div>
         </div>
-        `
-  };
+        `,
+    });
 
-  try {
-      await transporter.sendMail(mailOptions); 
-      return { success: true, otp: OTP }; 
-  } catch (error) {
-      console.error('메일 전송 실패:', error);
-      return { success: false };
+    console.log("메일 전송 성공:", info.messageId);
+    return { success: true, otp: OTP };
+  } catch (err) {
+    console.error("메일 전송 실패:", err);
+    return { success: false, error: err.message };
+  }
 }
 
-
-}
-    
 module.exports = sendEmail;
-
-

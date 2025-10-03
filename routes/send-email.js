@@ -1,6 +1,7 @@
 // email.js
-const nodemailer = require("nodemailer");
 const { google } = require("googleapis");
+const nodemailer = require("nodemailer"); // 메시지 인코딩에 사용
+require("dotenv").config();
 
 const oAuth2Client = new google.auth.OAuth2(
   process.env.GMAIL_CLIENT_ID,
@@ -16,44 +17,50 @@ async function sendEmail(to) {
   try {
     const accessToken = await oAuth2Client.getAccessToken();
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        type: "OAuth2",
-        user: process.env.GMAIL_USER,         
-        clientId: process.env.GMAIL_CLIENT_ID,
-        clientSecret: process.env.GMAIL_CLIENT_SECRET,
-        refreshToken: process.env.GMAIL_REFRESH_TOKEN,
-        accessToken: accessToken.token,        
-      },
-    });
+    const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
 
-    const info = await transporter.sendMail({
-      from: process.env.GMAIL_USER,
-      to ,
-      subject: "퀴즈팩토리 본인 인증 번호 발송",
-      html: `
-          <div style="background-color: #A4C3FF; padding: 30px;">
+    const subject = "퀴즈팩토리 본인 인증 번호 발송";
+    const encodedSubject = `=?UTF-8?B?${Buffer.from(subject).toString("base64")}?=`;
+
+    const mail = [
+      `From: Quiz Factory <${process.env.GMAIL_USER}>`,
+      `To: ${to}`,
+      `Subject: ${encodedSubject}`,
+      "MIME-Version: 1.0",
+      "Content-Type: text/html; charset=UTF-8",
+      "",
+      `
+        <div style="background-color: #A4C3FF; padding: 30px;">
           <div style="text-align: center; padding: 30px; background-color: white; border-radius: 10px;">
-            
-            <!-- 앱 이름 표시 -->
-            <h1 style="color: rgb(26, 35, 126); font-size: 28px; margin-bottom: 20px; font-weight: bold;">
+            <h1 style="color: #1A237E; font-size: 28px; margin-bottom: 20px; font-weight: bold;">
               QUIZ FACTORY
             </h1>
-
-            <!-- 본문 내용 -->
             <p style="font-size: 15px;">안녕하세요. 퀴즈팩토리입니다.</p>
             <p style="font-size: 15px;">어플 내에서 다음 인증 번호를 입력해 주세요.</p>
             <p style="font-size: 20px; font-weight: bold;">인증 번호</p>
             <p style="color: blue; font-size: 30px; font-weight: bold;">${OTP}</p>
-            <p style="font-size: 15px;">저희 어플을 이용해 주셔서 감사합니다.</p>
-            
+            <p style="font-size: 15px;">이용해 주셔서 감사합니다.</p>
           </div>
         </div>
-        `,
+      `
+    ].join("\n");
+
+    // Base64url 인코딩
+    const encodedMessage = Buffer.from(mail)
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+
+    // Gmail API 호출
+    const result = await gmail.users.messages.send({
+      userId: "me",
+      requestBody: {
+        raw: encodedMessage,
+      },
     });
 
-    console.log("메일 전송 성공:", info.messageId);
+    console.log("메일 전송 성공:", result.data.id);
     return { success: true, otp: OTP };
   } catch (err) {
     console.error("메일 전송 실패:", err);

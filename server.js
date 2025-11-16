@@ -59,10 +59,7 @@ const updateQuiz = require('./routes/update-quiz');
 const ranking = require('./routes/ranking');
 const rankingDetail = require('./routes/ranking-detail');
 const emailCheck = require('./routes/email-check');
-const changePassword = require('./routes/change-password');
 const deleteAccount = require('./routes/delete-account');
-const otpCheck = require('./routes/otp-check');
-const requestResetPwd = require('./routes/request-reset-pwd');
 
 app.use('/sign-up', signUpRoutes);
 app.use('/sign-in', signInRoutes);
@@ -70,12 +67,9 @@ app.use('/main', main);
 app.use('/write', saveQuiz);
 app.use('/find-quiz', findQuiz);
 app.use('/evaluate', evaluate);
-app.use('/delete-quiz', deleteQuiz);
+app.use('/delete-quiz', deleteQuiz);정
 app.use('/update-quiz', updateQuiz);
 app.use('/ranking', ranking);
 app.use('/ranking-detail', rankingDetail);
 app.use('/send-email', emailCheck);
-app.use('/change-password', changePassword);
 app.use('/delete-account', deleteAccount);
-app.use('/otp-check', otpCheck);
-app.use('/request-reset-pwd', requestResetPwd); // 비밀번호 변경시 otp 전송

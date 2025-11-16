@@ -67,7 +67,7 @@ app.use('/main', main);
 app.use('/write', saveQuiz);
 app.use('/find-quiz', findQuiz);
 app.use('/evaluate', evaluate);
-app.use('/delete-quiz', deleteQuiz);정
+app.use('/delete-quiz', deleteQuiz);
 app.use('/update-quiz', updateQuiz);
 app.use('/ranking', ranking);
 app.use('/ranking-detail', rankingDetail);
